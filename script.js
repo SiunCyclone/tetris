@@ -38,23 +38,15 @@ var board = {
 
 	init: function() {
 		//xAryList
-		var i = 0, o = 0;
-		for (i; i<this.size.y/CELL_SIZE; ++i) {
+		for (var i=0; i<this.size.y/CELL_SIZE; ++i) {
 			this.xAryList.push(new Array);	
-			this.xAryList[i].push(0);
-			for (o; o<this.size.x/CELL_SIZE-2; ++o) this.xAryList[i].push(false);
-			this.xAryList[i].push(this.size.x/CELL_SIZE);
-			o = 0;
+			for (var o=0; o<this.size.x/CELL_SIZE-2; ++o) this.xAryList[i].push(false);
 		}
 
 		//yAryList
-		var i = 0, o = 0;
-		for (i; i<this.size.x/CELL_SIZE; ++i) {
+		for (var i=0; i<this.size.x/CELL_SIZE; ++i) {
 			this.yAryList.push(new Array);	
-			this.yAryList[i].push(0);
-			for (o; o<this.size.y/CELL_SIZE-2; ++o) this.yAryList[i].push(false);
-			this.yAryList[i].push(this.size.y/CELL_SIZE-1);
-			o = 0;
+			for (var o=0; o<this.size.y/CELL_SIZE-2; ++o) this.yAryList[i].push(false);
 		}
 	},
 
@@ -118,19 +110,11 @@ var curBlock = {
 		}
 	},
 
-	//汚いです
 	slide: function(direction) {
-		if (this.canSlide()) {
-			if (direction=="right")
-				++this.cell.base.x;
-			else if (direction=="left")
-				--this.cell.base.x;
-
+		if (this.canSlide(direction)) {
 			for each (var pos in this.cell.pos) {
-				if (direction=="right")
-					++pos.x;
-				else if (direction=="left")
-					--pos.x;
+				if (direction=="right")     ++pos.x;
+				else if (direction=="left") --pos.x;
 			}
 		}
 	},
@@ -174,8 +158,31 @@ var curBlock = {
 		return true;
 	},
 
-	canSlide: function() {
+	canSlide: function(direction) {
+		for each (var pos in this.cell.pos) {
+			if (direction=="right") {
+				if ( (BOARD_MAX_X - pos.x) == 0 )
+					return false;
 
+				for each ( var min in _.compact(board.xAryList[pos.y]) ) {
+					if (min!=BOARD_MAX_X && pos.x < min && (min-pos.x) <= 1)
+						return false;
+				}
+			} else if (direction=="left") {
+				if (pos.x == 0 )
+					return false;
+
+				for each ( var max in _.compact(board.xAryList[pos.y]) ) {
+					if (max!=0 && pos.x > max && (pos.x-max) <= 1)
+						return false;
+				}
+			}
+
+			for each ( var min in _.compact(board.xAryList[pos.y]) ) {
+				if (min!=BOARD_MAX_Y && pos.y < min && (min-pos.y) <= 1)
+					return false;
+			}
+		}
 
 		return true;
 	}
@@ -247,6 +254,7 @@ var manager = {
 		}
 
 		console.log(board);
+		console.log(curBlock.cell.pos);
 
 	},
 
