@@ -6,7 +6,7 @@ var BLOCK = {
 			{x: 2, y: 0},
 			{x: 0, y: 1}
 		],
-		base: {x: 1, y: 0}, //this.pos[1]ってしたい つかポインタみたいに。
+		base: {x: 1, y: 0},
 		color: "#6699ff"	
 	},
 	yellow: {
@@ -16,10 +16,10 @@ var BLOCK = {
 			{x: 0, y: 1},
 			{x: 1, y: 1}
 		],
-		base: {x: 1, y: 1}
+		base: {x: 0.5, y: 0.5},
+		color: "yellow"
 	}
 };
-
 
 var PI = Math.PI;
 var	CELL_SIZE = 30;
@@ -33,32 +33,59 @@ function rand(num) { return Math.random() * num | 0; } //return x < num
 var board = {
 	size: {x: 600, y: 300},
 
-	cellList: new Array(),
+	xAryList: new Array(),
+	yAryList: new Array(),
 
 	init: function() {
-		for (var i=0; i<=this.size.y/CELL_SIZE+1; ++i) {
-			this.cellList.push(new Array);
-			for (var o=0; o<=this.size.x/CELL_SIZE+1; ++o)
-				this.cellList[i].push(false);
+		//xAryList
+		var i = 0, o = 0;
+		for (i; i<=this.size.y/CELL_SIZE+1; ++i) {
+			this.xAryList.push(new Array);	
+			this.xAryList[i].push(-1);
+			for (o; o<this.size.x/CELL_SIZE; ++o) this.xAryList[i].push(false);
+			this.xAryList[i].push(this.size.x/CELL_SIZE);
+			o = 0;
+		}
+
+		//yAryList
+		var i = 0, o = 0;
+		for (i; i<=this.size.x/CELL_SIZE+1; ++i) {
+			this.yAryList.push(new Array);	
+			this.yAryList[i].push(-1);
+			for (o; o<this.size.y/CELL_SIZE; ++o) this.yAryList[i].push(false);
+			this.yAryList[i].push(this.size.y/CELL_SIZE);
+			o = 0;
+		}
+	},
+
+	add: function(blockCell) {
+	//	console.log(blockCell);
+		for each (var pos in blockCell) {
+			board.xAryList[pos.y][pos.x] = pos.x;
+			board.yAryList[pos.x][pos.y] = pos.y;
 		}
 	}
 
 }
 
+//きもい
 var LINE_NUM = board.size.y/CELL_SIZE;
 
 var cx, cy;
 var curBlock = {
 	cell: new Object,
+
 	draw: function(drawFunc) {
 		for each (var pos in this.cell.pos) {
 			drawFunc(pos.x, pos.y, CELL_SIZE, CELL_SIZE);
 		}
 	},
+
 	clear: function(clearFunc) {
 		for each (var pos in this.cell.pos)
 			clearFunc(pos.x, pos.y, CELL_SIZE, CELL_SIZE);
 	},
+
 	move: function(e) {
 		switch (e.keyCode) {
 		case 37: this.slide("left"); break;
@@ -117,28 +144,21 @@ var curBlock = {
 			pos.y = cy;
 		}
 	},
+
 	fall: function() {
 		for each (var pos in this.cell.pos)
 			++pos.y;
 		++this.cell.base.y;
 	},
+
 	isFloat: function() {
-		for each (var pos in this.cell.pos)
-			if (pos.y >= LINE_NUM-1) {
-				//ぴたっっととまっちゃう
-				 return false;
+		for each (var pos in this.cell.pos) {
+			for (var i=pos.y; i<board.xAryList.length; ++i) {
+				if (board.yAryList[pos.x][pos.y+2] != false)
+					return false;
 			}
+		}
 		return true;
-	/*	switch (where) {
-		case "under":
-			for each (var pos in this.cell.pos)
-				if (pos.y >= LINE_NUM-1) return false;
-			return true;
-			break;
-		case "left":
-			break;
-		case "right":
-			break;*/
 	}
 };
 
@@ -163,11 +183,15 @@ var manager = {
 		// start押しまくったらバグ
 		$("#start").on("click", function() {
 			board.init();
-			
+			manager.blockAccurate();
+
 			for (var i=0; i<Object.keys(BLOCK).length; ++i)
 				nextNames.push(Object.keys(BLOCK)[rand(Object.keys(BLOCK).length)]);
 
+		//	console.log(curBlock.cell);
 			curBlock.cell = $.extend(true, BLOCK[ nextNames[manager.curNum] ]);
+	//		console.log(curBlock.cell);
+	//		console.log(curBlock.cell.pos);
 
 			$("html").keypress(function(e) {
 				curBlock.clear(manager.clearRectM);
@@ -185,20 +209,28 @@ var manager = {
 	},
 
 	update: function() {
+	/*
+		console.log(BLOCK);
+		console.log(board);
+*/
+
 		if (curBlock.isFloat()) {
 			curBlock.clear(this.clearRectM);
 			curBlock.fall();
 			curBlock.draw(this.fillRectM);
-		} else 
+		} else {
+			console.log(curBlock.cell);
+			board.add(curBlock.cell);
 			curBlock.cell = this.callNextBlock();
+		}
 	},
 
 	fillRectM: function(x, y, width, height) {
-		manager.context.fillRect(board.size.x/2-CELL_SIZE + x*CELL_SIZE, y*CELL_SIZE, width, height);
+		manager.context.fillRect(x*CELL_SIZE, y*CELL_SIZE, width, height);
 	},
 
 	clearRectM: function(x, y, width, height) {
-		manager.context.clearRect(board.size.x/2-CELL_SIZE + x*CELL_SIZE, y*CELL_SIZE, width, height);
+		manager.context.clearRect(x*CELL_SIZE, y*CELL_SIZE, width, height);
 	},
 
 	callNextBlock: function() {
@@ -209,8 +241,16 @@ var manager = {
 			this.curNum = 0;
 
 		return $.extend(true, BLOCK[nextNames[this.curNum]]);
+	},
+
+	blockAccurate: function() {
+		for each(var color in Object.keys(BLOCK)) {
+			for each (var pos in BLOCK[color].pos)
+				pos.x += (board.yAryList.length-2)/2 - 1;
+		}
 	}
 }; 
+
 $(function() {
 	manager.init();
 });
