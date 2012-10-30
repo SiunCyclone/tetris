@@ -59,10 +59,9 @@ var board = {
 	},
 
 	add: function(blockCell) {
-	//	console.log(blockCell);
 		for each (var pos in blockCell) {
-			board.xAryList[pos.y][pos.x] = pos.x;
-			board.yAryList[pos.x][pos.y] = pos.y;
+			board.xAryList[pos.y+1][pos.x] = pos.x-1;
+			board.yAryList[pos.x+1][pos.y] = pos.y-1;
 		}
 	}
 
@@ -127,6 +126,7 @@ var curBlock = {
 		}
 	},
 	//cx, cyなんとかしたいかな
+	//FIXME
 	turn: function(direction) {
 		for each (var pos in this.cell.pos) {
 			if (direction=="right") {
@@ -152,20 +152,32 @@ var curBlock = {
 	},
 
 	isFloat: function() {
+		var curY = this.underBlock().y;
+		var boardY;
+
 		for each (var pos in this.cell.pos) {
-			for (var i=pos.y; i<board.xAryList.length; ++i) {
-				if (board.yAryList[pos.x][pos.y+2] != false)
-					return false;
+			boardY = board.yAryList[pos.x][pos.y+2]
+			console.log(boardY);
+			if (curY+1 == boardY) {
+				for (var i=pos.y; i<board.xAryList.length; ++i) {
+					if (board != false)
+						return false;
+				}
 			}
 		}
 		return true;
+	},
+
+	underBlock: function() {
+		return _.max(this.cell.pos, function(pos) { return pos.y });
 	}
 };
 
 var manager = {
 	canvas: null,
 	context: null,
-
+	
+	isPlaying: true,
 	curNum: 0,
 
 	init: function() {
@@ -185,13 +197,19 @@ var manager = {
 			board.init();
 			manager.blockAccurate();
 
+
+
+
+
+
+
+
+
+
 			for (var i=0; i<Object.keys(BLOCK).length; ++i)
 				nextNames.push(Object.keys(BLOCK)[rand(Object.keys(BLOCK).length)]);
 
-		//	console.log(curBlock.cell);
 			curBlock.cell = $.extend(true, BLOCK[ nextNames[manager.curNum] ]);
-	//		console.log(curBlock.cell);
-	//		console.log(curBlock.cell.pos);
 
 			$("html").keypress(function(e) {
 				curBlock.clear(manager.clearRectM);
@@ -199,30 +217,31 @@ var manager = {
 				curBlock.draw(manager.fillRectM);
 			});
 
+			curBlock.draw(manager.fillRectM);
 			setTimeout(function() { manager.main() }, speed);		
 		});
+
+		$("#stop").on("click", function() { manager.isPlaying = false; });
 	},
 
 	main: function() {
 		this.update();
-		setTimeout(function() { manager.main() }, speed);		
+		if (this.isPlaying)
+			setTimeout(function() { manager.main() }, speed);
 	},
 
 	update: function() {
-	/*
-		console.log(BLOCK);
-		console.log(board);
-*/
-
 		if (curBlock.isFloat()) {
 			curBlock.clear(this.clearRectM);
 			curBlock.fall();
 			curBlock.draw(this.fillRectM);
 		} else {
-			console.log(curBlock.cell);
-			board.add(curBlock.cell);
+			board.add(curBlock.cell.pos);
 			curBlock.cell = this.callNextBlock();
 		}
+
+		console.log(board);
+
 	},
 
 	fillRectM: function(x, y, width, height) {
