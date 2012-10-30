@@ -39,36 +39,45 @@ var board = {
 	init: function() {
 		//xAryList
 		var i = 0, o = 0;
-		for (i; i<=this.size.y/CELL_SIZE+1; ++i) {
+		for (i; i<this.size.y/CELL_SIZE; ++i) {
 			this.xAryList.push(new Array);	
-			this.xAryList[i].push(-1);
-			for (o; o<this.size.x/CELL_SIZE; ++o) this.xAryList[i].push(false);
+			this.xAryList[i].push(0);
+			for (o; o<this.size.x/CELL_SIZE-2; ++o) this.xAryList[i].push(false);
 			this.xAryList[i].push(this.size.x/CELL_SIZE);
 			o = 0;
 		}
 
 		//yAryList
 		var i = 0, o = 0;
-		for (i; i<=this.size.x/CELL_SIZE+1; ++i) {
+		for (i; i<this.size.x/CELL_SIZE; ++i) {
 			this.yAryList.push(new Array);	
-			this.yAryList[i].push(-1);
-			for (o; o<this.size.y/CELL_SIZE; ++o) this.yAryList[i].push(false);
-			this.yAryList[i].push(this.size.y/CELL_SIZE);
+			this.yAryList[i].push(0);
+			for (o; o<this.size.y/CELL_SIZE-2; ++o) this.yAryList[i].push(false);
+			this.yAryList[i].push(this.size.y/CELL_SIZE-1);
 			o = 0;
 		}
 	},
 
 	add: function(blockCell) {
 		for each (var pos in blockCell) {
-			board.xAryList[pos.y+1][pos.x] = pos.x-1;
-			board.yAryList[pos.x+1][pos.y] = pos.y-1;
+			board.xAryList[pos.y][pos.x] = pos.x;
+			board.yAryList[pos.x][pos.y] = pos.y;
+		}
+	},
+
+	remove: function(blockCell) {
+		for each (var pos in blockCell) {
+			board.xAryList[pos.y][pos.x] = false;
+			board.yAryList[pos.x][pos.y] = false;
 		}
 	}
-
 }
 
 //きもい
 var LINE_NUM = board.size.y/CELL_SIZE;
+
+var BOARD_MAX_X = board.size.x/CELL_SIZE-1;
+var BOARD_MAX_Y = board.size.y/CELL_SIZE-1;
 
 var cx, cy;
 var curBlock = {
@@ -99,7 +108,7 @@ var curBlock = {
 			break;
 		case 39: this.slide("right"); break;	
 		case 40:
-			if (this.isFloat())
+			if (this.check())
 				this.fall();
 			break;
 		}
@@ -111,7 +120,7 @@ var curBlock = {
 
 	//汚いです
 	slide: function(direction) {
-		if (this.isFloat()) {
+		if (this.check()) {
 			if (direction=="right")
 				++this.cell.base.x;
 			else if (direction=="left")
@@ -151,25 +160,34 @@ var curBlock = {
 		++this.cell.base.y;
 	},
 
-	isFloat: function() {
-		var curY = this.underBlock().y;
-		var boardY;
-
-		for each (var pos in this.cell.pos) {
-			boardY = board.yAryList[pos.x][pos.y+2]
-			console.log(boardY);
-			if (curY+1 == boardY) {
-				for (var i=pos.y; i<board.xAryList.length; ++i) {
-					if (board != false)
-						return false;
-				}
-			}
-		}
+	check: function() {
+		if ( !this.isFloat() || !this.isInField() )
+			return false;
+	//notGameOver?
 		return true;
 	},
 
-	underBlock: function() {
-		return _.max(this.cell.pos, function(pos) { return pos.y });
+	isFloat: function() {
+		for each (var pos in this.cell.pos) {
+			for each ( var min in _.compact(board.yAryList[pos.x]) ) {
+				if (min!=BOARD_MAX_Y && pos.y < min && (min-pos.y) <= 1)
+					return false;
+			}
+		}
+
+		return true;
+	},
+
+	isInField: function() {
+
+		//左右
+
+		for each (var pos in this.cell.pos) {
+			if ( (BOARD_MAX_Y - pos.y) == 0 )
+				return false;
+		}
+
+		return true;
 	}
 };
 
@@ -204,8 +222,6 @@ var manager = {
 
 
 
-
-
 			for (var i=0; i<Object.keys(BLOCK).length; ++i)
 				nextNames.push(Object.keys(BLOCK)[rand(Object.keys(BLOCK).length)]);
 
@@ -231,7 +247,7 @@ var manager = {
 	},
 
 	update: function() {
-		if (curBlock.isFloat()) {
+		if (curBlock.check()) {
 			curBlock.clear(this.clearRectM);
 			curBlock.fall();
 			curBlock.draw(this.fillRectM);
