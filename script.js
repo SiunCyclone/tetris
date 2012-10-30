@@ -108,7 +108,7 @@ var curBlock = {
 			break;
 		case 39: this.slide("right"); break;	
 		case 40:
-			if (this.check())
+			if ( this.canFall() )
 				this.fall();
 			break;
 		}
@@ -120,7 +120,7 @@ var curBlock = {
 
 	//汚いです
 	slide: function(direction) {
-		if (this.check()) {
+		if (this.canSlide()) {
 			if (direction=="right")
 				++this.cell.base.x;
 			else if (direction=="left")
@@ -160,15 +160,11 @@ var curBlock = {
 		++this.cell.base.y;
 	},
 
-	check: function() {
-		if ( !this.isFloat() || !this.isInField() )
-			return false;
-	//notGameOver?
-		return true;
-	},
-
-	isFloat: function() {
+	canFall: function() {
 		for each (var pos in this.cell.pos) {
+			if ( (BOARD_MAX_Y - pos.y) == 0 )
+				return false;
+
 			for each ( var min in _.compact(board.yAryList[pos.x]) ) {
 				if (min!=BOARD_MAX_Y && pos.y < min && (min-pos.y) <= 1)
 					return false;
@@ -178,14 +174,8 @@ var curBlock = {
 		return true;
 	},
 
-	isInField: function() {
+	canSlide: function() {
 
-		//左右
-
-		for each (var pos in this.cell.pos) {
-			if ( (BOARD_MAX_Y - pos.y) == 0 )
-				return false;
-		}
 
 		return true;
 	}
@@ -247,7 +237,7 @@ var manager = {
 	},
 
 	update: function() {
-		if (curBlock.check()) {
+		if ( curBlock.canFall() ) {
 			curBlock.clear(this.clearRectM);
 			curBlock.fall();
 			curBlock.draw(this.fillRectM);
