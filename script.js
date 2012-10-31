@@ -31,7 +31,7 @@ function sin(rad) { return ~~(Math.sin(rad)); } //バグの温床
 function rand(num) { return Math.random() * num | 0; } //return x < num
 
 var board = {
-	size: {x: 600, y: 300},
+	size: {x: 300, y: 300},
 
 	xAryList: new Array(),
 	yAryList: new Array(),
@@ -40,13 +40,17 @@ var board = {
 		//xAryList
 		for (var i=0; i<this.size.y/CELL_SIZE; ++i) {
 			this.xAryList.push(new Array);	
-			for (var o=0; o<this.size.x/CELL_SIZE; ++o) this.xAryList[i].push(false);
+
+			for (var o=0; o<this.size.x/CELL_SIZE; ++o)
+				this.xAryList[i].push(false);
 		}
 
 		//yAryList
 		for (var i=0; i<this.size.x/CELL_SIZE; ++i) {
 			this.yAryList.push(new Array);	
-			for (var o=0; o<this.size.y/CELL_SIZE; ++o) this.yAryList[i].push(false);
+
+			for (var o=0; o<this.size.y/CELL_SIZE; ++o)
+				this.yAryList[i].push(false);
 		}
 	},
 
@@ -62,6 +66,25 @@ var board = {
 			board.xAryList[pos.y][pos.x] = false;
 			board.yAryList[pos.x][pos.y] = false;
 		}
+	},
+	
+	canRemove: function() {
+		//xAryList
+		for (var i=0; i<this.size.y/CELL_SIZE; ++i) {
+			for (var o=0; o<this.size.x/CELL_SIZE; ++o) {
+				if ( _.indexOf(this.xAryList[i], false) != -1 )
+					return true;
+			}
+		}
+
+		//yAryList
+		for (var i=0; i<this.size.x/CELL_SIZE; ++i) {
+			for (var o=0; o<this.size.y/CELL_SIZE; ++o)
+				if ( _.indexOf(this.yAryList[i], false) != -1 )
+					return true;
+		}
+
+		return false;
 	}
 }
 
@@ -79,7 +102,7 @@ var curBlock = {
 		for each (var pos in this.cell.pos) {
 			drawFunc(pos.x, pos.y, CELL_SIZE, CELL_SIZE);
 		}
-		console.log(curBlock.cell.pos);
+		//console.log(curBlock.cell.pos);
 	},
 
 	clear: function(clearFunc) {
@@ -89,7 +112,10 @@ var curBlock = {
 
 	move: function(e) {
 		switch (e.keyCode) {
-		case 37: this.slide("left"); break;
+		case 37: 
+			if ( this.canSlide("left") )
+				this.slide("left");
+			break;
 		case 38:
 			/*
 			for each (var pos in this.cell.pos) {
@@ -99,49 +125,53 @@ var curBlock = {
 				++pos.y
 			}*/
 			break;
-		case 39: this.slide("right"); break;	
+		case 39: 
+			if ( this.canSlide("right") )
+				this.slide("right");
+			break;	
 		case 40:
 			if ( this.canFall() )
 				this.fall();
 			break;
 		}
+
 		switch (e.charCode) {
-		case 99:  this.turn("right"); break;
-		case 120: this.turn("left"); break
+		case 99:
+			if ( this.canTurn("right") )
+				this.turn("right");
+			break;
+		case 120:
+			if ( this.canTurn("left") )
+				this.turn("left");
+			break;
 		}
 	},
 
 	slide: function(direction) {
-		if (this.canSlide(direction)) {
-			if (direction=="right")     ++this.cell.base.x;
-			else if (direction=="left") --this.cell.base.x;
+		if (direction=="right")     ++this.cell.base.x;
+		else if (direction=="left") --this.cell.base.x;
 
-			for each (var pos in this.cell.pos) {
-				if (direction=="right")     ++pos.x;
-				else if (direction=="left") --pos.x;
-			}
+		for each (var pos in this.cell.pos) {
+			if (direction=="right")     ++pos.x;
+			else if (direction=="left") --pos.x;
 		}
 	},
 	//cx, cyなんとかしたいかな
-	//FIXME
 	turn: function(direction) {
-		if ( this.canTurn(direction) ) {
-			for each (var pos in this.cell.pos) {
-				if (direction=="right") {
-					cx = (pos.x-this.cell.base.x) * cos(PI/2) -
-						 (pos.y-this.cell.base.y) * sin(PI/2) + this.cell.base.x;
-					cy = (pos.x-this.cell.base.x) * sin(PI/2) +
-						 (pos.y-this.cell.base.y) * cos(PI/2) + this.cell.base.y;
-				} else if (direction=="left") {
-					cx = (pos.x-this.cell.base.x) * cos(-PI/2) -
-						 (pos.y-this.cell.base.y) * sin(-PI/2) + this.cell.base.x;
-					cy = (pos.x-this.cell.base.x) * sin(-PI/2) +
-						 (pos.y-this.cell.base.y) * cos(-PI/2) + this.cell.base.y;
-				}
-				pos.x = cx;
-				pos.y = cy;
+		for each (var pos in this.cell.pos) {
+			if (direction=="right") {
+				cx = (pos.x-this.cell.base.x) * cos(PI/2) -
+					 (pos.y-this.cell.base.y) * sin(PI/2) + this.cell.base.x;
+				cy = (pos.x-this.cell.base.x) * sin(PI/2) +
+					 (pos.y-this.cell.base.y) * cos(PI/2) + this.cell.base.y;
+			} else if (direction=="left") {
+				cx = (pos.x-this.cell.base.x) * cos(-PI/2) -
+					 (pos.y-this.cell.base.y) * sin(-PI/2) + this.cell.base.x;
+				cy = (pos.x-this.cell.base.x) * sin(-PI/2) +
+					 (pos.y-this.cell.base.y) * cos(-PI/2) + this.cell.base.y;
 			}
-
+			pos.x = cx;
+			pos.y = cy;
 		}
 	},
 
@@ -153,11 +183,13 @@ var curBlock = {
 
 	canFall: function() {
 		for each (var pos in this.cell.pos) {
+			//Field
 			if ( (BOARD_MAX_Y - pos.y) == 0 )
 				return false;
 
+			//SolidBlock
 			for each ( var min in _.compact(board.yAryList[pos.x]) ) {
-				if (min!=BOARD_MAX_Y && pos.y < min && (min-pos.y) <= 1)
+				if (pos.y < min && (min-pos.y) <= 1)
 					return false;
 			}
 		}
@@ -171,26 +203,25 @@ var curBlock = {
 	canSlide: function(direction) {
 		for each (var pos in this.cell.pos) {
 			if (direction=="right") {
+				//Field
 				if ( (BOARD_MAX_X - pos.x) == 0 )
 					return false;
 
+				//SolidBlock
 				for each ( var min in _.compact(board.xAryList[pos.y]) ) {
-					if (min!=BOARD_MAX_X && pos.x < min && (min-pos.x) <= 1)
+					if (pos.x < min && (min-pos.x) <= 1)
 						return false;
 				}
 			} else if (direction=="left") {
+				//Field
 				if (pos.x == 0 )
 					return false;
 
+				//SolidBlock
 				for each ( var max in _.compact(board.xAryList[pos.y]) ) {
-					if (max!=0 && pos.x > max && (pos.x-max) <= 1)
+					if (pos.x > max && (pos.x-max) <= 1)
 						return false;
 				}
-			}
-
-			for each ( var min in _.compact(board.xAryList[pos.y]) ) {
-				if (min!=BOARD_MAX_Y && pos.y < min && (min-pos.y) <= 1)
-					return false;
 			}
 		}
 
@@ -211,10 +242,12 @@ var curBlock = {
 					 (pos.y-this.cell.base.y) * cos(-PI/2) + this.cell.base.y;
 			}
 
+			//Field
 			if ( (BOARD_MAX_X - cx) < 0 || cx < 0 ||
 				 (BOARD_MAX_Y - cy) < 0 || cy < 0 )
 				return false;
 
+			//SolidBlock
 			for each ( var xSolid in _.compact(board.xAryList[cy]) ) {
 				if (cx == xSolid) return false;
 			}
@@ -256,10 +289,6 @@ var manager = {
 
 
 
-
-
-
-
 			for (var i=0; i<Object.keys(BLOCK).length; ++i)
 				nextNames.push(Object.keys(BLOCK)[rand(Object.keys(BLOCK).length)]);
 
@@ -295,10 +324,12 @@ var manager = {
 			curBlock.draw(this.fillRectM);
 		} else {
 			board.add(curBlock.cell.pos);
+			if ( board.canRemove() )
+				board.remove();
 			curBlock.cell = this.callNextBlock();
 		}
 
-		console.log(board);
+		console.log("board",board);
 		console.log("curBlock",curBlock);
 
 	},
