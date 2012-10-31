@@ -9,7 +9,8 @@ var Tetrimino = {
 		base: {x: 1, y: 0},
 		color: "#6699ff"	
 	}
-/*	yellow: {
+/*
+	yellow: {
 		pos: [
 			{x: 0, y: 0},
 			{x: 1, y: 0},
@@ -18,7 +19,8 @@ var Tetrimino = {
 		],
 		base: {x: 0.5, y: 0.5},
 		color: "yellow"
-	}*/
+	}
+*/
 };
 
 var PI = Math.PI;
@@ -47,47 +49,41 @@ var board = {
 	},
 
 	update: function(drawFunc) {
-		if ( this.canDelLine() )
-			this.delLine();
+		if ( this.canRemove() )
+			this.remove();
 
 		this.draw(drawFunc);
-
-		console.log("board is updated");
 	},
 
 	add: function(curPosAry) {
-		console.log(curPosAry);
 		for each (var pos in curPosAry)
 			this.field[pos.y][pos.x] = true;
 	},
 
-	delLine: function() {
+	remove: function() {
 		for each (var line in this.dLine) {
-			this.field[line].splice(line, 1)
+			this.field.splice(line, 1)
 			this.field.unshift( $.extend(true, [], this.emptyLine) );
 		}
+		this.dLine = [];
 	},
 	
-	//もうちょい きれいにしたい
-	canDelLine: function() {
-		var t;
-		for each (var line in this.field) {
-			t = true;
-			for each (var flag in line) {
-				if (!flag) t = false;
-			}
-			if (t) return true;
+	canRemove: function() {
+		for (var y=0; y<this.size.y/CELL_SIZE; ++y) {
+			if ( _.indexOf(this.field[y], false) == -1 )
+				this.dLine.push(y);
 		}		
 
-		return false;
+		if ( _.isEmpty(this.dLine) )
+			return false;
+		else return true;
 	},
 
 	draw: function(drawFunc) {
 		for (var y=0; y<this.size.y/CELL_SIZE; ++y) {
 			for (var x=0; x<this.size.x/CELL_SIZE; ++x) {
-				if (this.field[y][x]) {
+				if (this.field[y][x])
 					drawFunc(x, y, CELL_SIZE, CELL_SIZE);
-				}
 			}
 		}
 	}
@@ -104,14 +100,11 @@ var curBlock = {
 		}
 
 		this.draw(drawFunc);
-		
-		console.log("curBlock is updated");
 	},
 
 	draw: function(drawFunc) {
 		for each (var pos in this.cell.pos)
 			drawFunc(pos.x, pos.y, CELL_SIZE, CELL_SIZE);
-		//console.log(curBlock.cell.pos);
 	},
 
 	clear: function(clearFunc) {
@@ -297,10 +290,6 @@ var manager = {
 			board.init();
 			manager.blockAccurate();
 
-
-
-
-
 			for (var i=0; i<Object.keys(Tetrimino).length; ++i)
 				nextNames.push(Object.keys(Tetrimino)[rand(Object.keys(Tetrimino).length)]);
 
@@ -333,35 +322,6 @@ var manager = {
 
 		curBlock.update(this.fillRectM);
 		board.update(this.fillRectM);
-
-
-		console.log("board",board);
-		console.log("curBlock",curBlock);
-
-		console.log("");
-
-
-
-/*
-		if ( curBlock.canFall() ) {
-			curBlock.clear(this.clearRectM);
-			curBlock.fall();
-			curBlock.draw(this.fillRectM);
-		} else {
-			board.add(curBlock.cell.pos);
-			if ( board.canRemove() ) {
-				board.clear(this.clearRectM);
-				board.remove();
-				board.fall();
-				board.draw();
-			}
-			curBlock.cell = this.callNextBlock();
-		}
-
-		console.log("board",board);
-		console.log("curBlock",curBlock);
-*/
-
 	},
 
 	fillRectM: function(x, y, width, height) {
@@ -386,7 +346,6 @@ var manager = {
 		for each(var color in Object.keys(Tetrimino)) {
 			for each (var pos in Tetrimino[color].pos)
 				pos.x += (board.size.x/CELL_SIZE) / 2 - 1;
-				//pos.x += (board.yAryList.length-2)/2 - 1;
 
 			Tetrimino[color].base.x += (board.size.x/CELL_SIZE) /2 - 1;
 		}
