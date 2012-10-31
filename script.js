@@ -61,17 +61,16 @@ var Tetrimino = {
 	},
 	cyan: {
 		pos: [
+			{x: 0, y: 0},
 			{x: 1, y: 0},
 			{x: 2, y: 0},
 			{x: 3, y: 0},
-			{x: 4, y: 0},
 		],
 		base: {x: 1, y: 0},
 		color: "#02e4e6"
 	}
 };
 
-//どこに落ちるか表示
 //スペア
 
 var PI = Math.PI;
@@ -107,10 +106,8 @@ var board = {
 
 	add: function(curCell) {
 		for each (var pos in curCell.pos) {
-			console.log(pos.y);
 			this.field[pos.y][pos.x].flag = true;
 			this.field[pos.y][pos.x].color = curCell.color;
-			console.log(this.field[pos.y]);
 		}
 	},
 
@@ -153,15 +150,25 @@ var board = {
 
 var curBlock = {
 	cell: new Object,
+	shade: new Array,
+	
+	init: function() {
+		curBlock.cell = $.extend(true, {}, Tetrimino[ nextNames[manager.curNum] ]);
+		for each (var pos in this.cell.pos)
+			this.shade.push({x: pos.x, y: pos.y});
+	},
 
-	update: function(drawFunc, colorFunc) {
+	update: function(drawFunc, colorFunc, alphaFunc) {
 		if ( this.canFall() ) this.fall();
 		else {
 			board.add(this.cell);
 			this.cell = manager.callNextBlock();
+			for (var i=0; i<this.cell.pos.length; ++i)
+				this.shade[i] = {x: this.cell.pos[i].x, y: this.cell.pos[i].y};
 		}
 
 		this.draw(drawFunc, colorFunc);
+		this.drawShade(drawFunc, alphaFunc);
 	},
 
 	draw: function(drawFunc, colorFunc) {
@@ -169,9 +176,49 @@ var curBlock = {
 		for each (var pos in this.cell.pos)
 			drawFunc(pos.x, pos.y, CELL_SIZE, CELL_SIZE);
 	},
+	
+	drawShade: function(drawFunc, alphaFunc) {
+		alphaFunc(0.4);
+		this.shadeAcuPos();
+		for each (var pos in this.shade)
+			drawFunc(pos.x, pos.y, CELL_SIZE, CELL_SIZE);
+		alphaFunc(1.0);
+	},
+
+	shadeAcuPos: function() {
+		this.shade = $.extend(true, [], this.cell.pos);
+
+		while (canFall())
+			fall();
+
+		function canFall() {
+			for each (var pos in curBlock.shade) {
+				//Field
+				if ( (board.size.y/CELL_SIZE-1 - pos.y) == 0 )
+					return false;
+
+				//SolidBlock
+				for (var y=0; y<board.size.y/CELL_SIZE; ++y) {
+					if (pos.y < y) {
+						if (board.field[y][pos.x].flag && (y-pos.y) <= 1)
+							return false;
+					}
+				}
+			}
+
+			return true;
+		}
+
+		function fall() {
+			for each (var pos in curBlock.shade)
+				++pos.y;
+		}
+	},
 
 	clear: function(clearFunc) {
 		for each (var pos in this.cell.pos)
+			clearFunc(pos.x, pos.y, CELL_SIZE, CELL_SIZE);
+		for each (var pos in this.shade)
 			clearFunc(pos.x, pos.y, CELL_SIZE, CELL_SIZE);
 	},
 
@@ -182,6 +229,7 @@ var curBlock = {
 				this.slide("left");
 			break;
 		case 38:
+			//まだ動ける
 			while ( this.canFall() )
 				this.fall();	
 			break;
@@ -216,23 +264,24 @@ var curBlock = {
 			else if (direction=="left") --pos.x;
 		}
 	},
-	//cx, cyなんとかしたいかな
+
 	cx: null, cy: null,
+	//i　にしなくていい
 	turn: function(direction) {
-		for each (var pos in this.cell.pos) {
+		for (var i=0; i<this.cell.pos.length; ++i) {
 			if (direction=="right") {
-				this.cx = (pos.x-this.cell.base.x) * cos(PI/2) -
-					 (pos.y-this.cell.base.y) * sin(PI/2) + this.cell.base.x;
-				this.cy = (pos.x-this.cell.base.x) * sin(PI/2) +
-					 (pos.y-this.cell.base.y) * cos(PI/2) + this.cell.base.y;
+				this.cx = (this.cell.pos[i].x-this.cell.base.x) * cos(PI/2) -
+					      (this.cell.pos[i].y-this.cell.base.y) * sin(PI/2) + this.cell.base.x;
+				this.cy = (this.cell.pos[i].x-this.cell.base.x) * sin(PI/2) +
+						  (this.cell.pos[i].y-this.cell.base.y) * cos(PI/2) + this.cell.base.y;
 			} else if (direction=="left") {
-				this.cx = (pos.x-this.cell.base.x) * cos(-PI/2) -
-					 (pos.y-this.cell.base.y) * sin(-PI/2) + this.cell.base.x;
-				this.cy = (pos.x-this.cell.base.x) * sin(-PI/2) +
-					 (pos.y-this.cell.base.y) * cos(-PI/2) + this.cell.base.y;
+				this.cx = (this.cell.pos[i].x-this.cell.base.x) * cos(-PI/2) -
+					      (this.cell.pos[i].y-this.cell.base.y) * sin(-PI/2) + this.cell.base.x;
+				this.cy = (this.cell.pos[i].x-this.cell.base.x) * sin(-PI/2) +
+					      (this.cell.pos[i].y-this.cell.base.y) * cos(-PI/2) + this.cell.base.y;
 			}
-			pos.x = this.cx;
-			pos.y = this.cy;
+			this.cell.pos[i].x = this.cx;
+			this.cell.pos[i].y = this.cy;
 		}
 	},
 
@@ -258,9 +307,6 @@ var curBlock = {
 		}
 
 		return true;
-
-		//fieldチェックの関数とブロックの上かの判定関数をつくって
-		//わけてみたい
 	},
 
 	canSlide: function(direction) {
@@ -352,17 +398,19 @@ var manager = {
 			manager.blockAccurate();
 
 			for (var i=0; i<Object.keys(Tetrimino).length; ++i)
-				nextNames.push(Object.keys(Tetrimino)[rand(Object.keys(Tetrimino).length)]);
+				nextNames.push(Object.keys( Tetrimino)[rand(Object.keys(Tetrimino).length)] );
 
-			curBlock.cell = $.extend(true, {}, Tetrimino[ nextNames[manager.curNum] ]);
+			curBlock.init();
 
 			$("html").keypress(function(e) {
 				curBlock.clear(manager.clearRectM);
 				curBlock.move(e);
 				curBlock.draw(manager.fillRectM, manager.setColor);
+				curBlock.drawShade(manager.fillRectM, manager.alphaChange);
 			});
 
 			curBlock.draw(manager.fillRectM, manager.setColor);
+			curBlock.drawShade(manager.fillRectM, manager.alphaChange);
 			setTimeout(function() { manager.main() }, speed);		
 		});
 
@@ -381,10 +429,8 @@ var manager = {
 	update: function() {
 		this.clearView();
 
-		curBlock.update(this.fillRectM, this.setColor);
+		curBlock.update(this.fillRectM, this.setColor, this.alphaChange);
 		board.update(this.fillRectM, this.setColor);
-
-		console.log(board);
 	},
 
 	fillRectM: function(x, y, width, height) {
@@ -403,6 +449,10 @@ var manager = {
 
 	setColor: function(color) {
 		manager.context.fillStyle = color;
+	},
+
+	alphaChange: function(num) {
+		manager.context.globalAlpha = num;
 	},
 
 	callNextBlock: function() {
