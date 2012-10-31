@@ -40,13 +40,13 @@ var board = {
 		//xAryList
 		for (var i=0; i<this.size.y/CELL_SIZE; ++i) {
 			this.xAryList.push(new Array);	
-			for (var o=0; o<this.size.x/CELL_SIZE-2; ++o) this.xAryList[i].push(false);
+			for (var o=0; o<this.size.x/CELL_SIZE; ++o) this.xAryList[i].push(false);
 		}
 
 		//yAryList
 		for (var i=0; i<this.size.x/CELL_SIZE; ++i) {
 			this.yAryList.push(new Array);	
-			for (var o=0; o<this.size.y/CELL_SIZE-2; ++o) this.yAryList[i].push(false);
+			for (var o=0; o<this.size.y/CELL_SIZE; ++o) this.yAryList[i].push(false);
 		}
 	},
 
@@ -79,6 +79,7 @@ var curBlock = {
 		for each (var pos in this.cell.pos) {
 			drawFunc(pos.x, pos.y, CELL_SIZE, CELL_SIZE);
 		}
+		console.log(curBlock.cell.pos);
 	},
 
 	clear: function(clearFunc) {
@@ -121,6 +122,17 @@ var curBlock = {
 	//cx, cyなんとかしたいかな
 	//FIXME
 	turn: function(direction) {
+		if ( this.canTurn(direction) ) {
+			for each (var pos in this.cell.pos) {
+
+
+
+			}
+		}
+
+
+
+
 		for each (var pos in this.cell.pos) {
 			if (direction=="right") {
 				cx = (pos.x-this.cell.base.x) * cos(PI/2) -
@@ -185,6 +197,20 @@ var curBlock = {
 		}
 
 		return true;
+	},
+
+	canTurn: function(direction) {
+		for each (var pos in this.cell.pos) {
+			if (direction=="right") {
+
+			} else if (direction=="left") {
+
+
+
+			}
+		}
+
+		return true;
 	}
 };
 
@@ -235,6 +261,10 @@ var manager = {
 		});
 
 		$("#stop").on("click", function() { manager.isPlaying = false; });
+		$("#resume").on("click", function() {
+			manager.isPlaying = true;
+			manager.main();		
+		});
 	},
 
 	main: function() {
@@ -254,7 +284,6 @@ var manager = {
 		}
 
 		console.log(board);
-		console.log(curBlock.cell.pos);
 
 	},
 
