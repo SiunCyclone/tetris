@@ -76,14 +76,13 @@ var Tetrimino = {
 
 var PI = Math.PI;
 var	CELL_SIZE = 30;
-var	speed = 1000;
+var	speed = 500;
 var nextNames = new Array;
 
 function cos(rad) { return ~~(Math.cos(rad)); } //バグの温床
 function sin(rad) { return ~~(Math.sin(rad)); } //バグの温床
 function rand(num) { return Math.random() * num | 0; } //return x < num
 
-//boardの名前変えるべき
 var board = {
 	size: {x: 300, y: 600},
 
@@ -183,13 +182,8 @@ var curBlock = {
 				this.slide("left");
 			break;
 		case 38:
-			/*
-			for each (var pos in this.cell.pos) {
-				if (pos.y > board.size.y/CELL_SIZE) {
-					break;
-				}
-				++pos.y
-			}*/
+			while ( this.canFall() )
+				this.fall();	
 			break;
 		case 39: 
 			if ( this.canSlide("right") )
@@ -343,6 +337,9 @@ var manager = {
 			return;
 		}
 		this.context = this.canvas.getContext("2d");
+		this.context.strokeRect(1, 1, 
+								board.size.x+2 + board.size.x/CELL_SIZE,
+								board.size.y+2 + board.size.y/CELL_SIZE);
 
 		this.run();
 	},
@@ -391,11 +388,17 @@ var manager = {
 	},
 
 	fillRectM: function(x, y, width, height) {
-		manager.context.fillRect(x*CELL_SIZE, y*CELL_SIZE, width, height);
+		manager.context.fillRect(x*CELL_SIZE+2+x, y*CELL_SIZE+2+y, width, height);
 	},
 
 	clearRectM: function(x, y, width, height) {
-		manager.context.clearRect(x*CELL_SIZE, y*CELL_SIZE, width, height);
+		manager.context.clearRect(x*CELL_SIZE+2+x, y*CELL_SIZE+2+y, width, height);
+	},
+
+	clearView: function() {
+		this.clearRectM(0, 0,
+						board.size.x + board.size.x/CELL_SIZE,
+						board.size.y + board.size.y/CELL_SIZE);
 	},
 
 	setColor: function(color) {
@@ -419,10 +422,6 @@ var manager = {
 
 			Tetrimino[color].base.x += (board.size.x/CELL_SIZE) /2 - 1;
 		}
-	},
-
-	clearView: function() {
-		this.clearRectM(0, 0, board.size.x, board.size.y);
 	}
 }; 
 
