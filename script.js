@@ -223,7 +223,7 @@ var curBlock = {
 			clearFunc(pos.x, pos.y, CELL_SIZE, CELL_SIZE);
 	},
 
-	move: function(e) {
+	move: function(e, drawFunc, colorFunc, alphaFunc) {
 		switch (e.keyCode) {
 		case 37: 
 			if ( this.canSlide("left") )
@@ -233,6 +233,9 @@ var curBlock = {
 			//まだ動ける
 			while ( this.canFall() )
 				this.fall();	
+			manager.clearView();
+			this.update(drawFunc, colorFunc, alphaFunc);
+			board.update(drawFunc, colorFunc);
 			break;
 		case 39: 
 			if ( this.canSlide("right") )
@@ -427,7 +430,7 @@ var manager = {
 
 			$("html").keypress(function(e) {
 				curBlock.clear(manager.clearRectM);
-				curBlock.move(e);
+				curBlock.move(e, manager.fillRectM, manager.setColor, manager.alphaChange);
 				curBlock.draw(manager.fillRectM, manager.setColor);
 				curBlock.drawShade(manager.fillRectM, manager.alphaChange);
 			});
@@ -465,9 +468,7 @@ var manager = {
 	},
 
 	clearView: function() {
-		this.clearRectM(0, 0,
-						board.size.x + board.size.x/CELL_SIZE,
-						board.size.y + board.size.y/CELL_SIZE);
+		this.clearRectM(0, 0, board.size.x + board.size.x/CELL_SIZE, board.size.y + board.size.y/CELL_SIZE);
 	},
 
 	setColor: function(color) {
