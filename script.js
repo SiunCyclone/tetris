@@ -71,8 +71,6 @@ var Tetrimino = {
 	}
 };
 
-//スペア
-
 var PI = Math.PI;
 var	CELL_SIZE = 30;
 var	speed = 500;
@@ -151,6 +149,8 @@ var board = {
 var curBlock = {
 	cell: new Object,
 	shade: new Array,
+	spareName: null,
+	canSpare: true,
 	
 	init: function() {
 		curBlock.cell = $.extend(true, {}, Tetrimino[ nextNames[manager.curNum] ]);
@@ -165,6 +165,7 @@ var curBlock = {
 			this.cell = manager.callNextBlock();
 			for (var i=0; i<this.cell.pos.length; ++i)
 				this.shade[i] = {x: this.cell.pos[i].x, y: this.cell.pos[i].y};
+			this.canSpare = true;
 		}
 
 		this.draw(drawFunc, colorFunc);
@@ -244,6 +245,11 @@ var curBlock = {
 		}
 
 		switch (e.charCode) {
+		case 32:
+			if (this.canSpare)
+				this.spare();
+			//スペア切り替え
+			break;
 		case 99:
 			if ( this.canTurn("right") )
 				this.turn("right");
@@ -253,6 +259,23 @@ var curBlock = {
 				this.turn("left");
 			break;
 		}
+	},
+
+	spare: function() {
+		if (this.spareName != null) {
+			if (manager.curNum >= Object.keys(Tetrimino).length)
+				nextNames[0] = this.spareName;
+			else nextNames[manager.curNum+1] = this.spareName;
+		}
+		this.spareName = nextNames[manager.curNum];
+		nextNames[manager.curNum] = Object.keys(Tetrimino)[rand(Object.keys(Tetrimino).length)];
+		++manager.curNum;
+
+		if (manager.curNum >= Object.keys(Tetrimino).length)
+			manager.curNum = 0;
+
+		this.init();
+		this.canSpare = false;
 	},
 
 	slide: function(direction) {
@@ -265,8 +288,8 @@ var curBlock = {
 		}
 	},
 
+	//i にしなくていい
 	cx: null, cy: null,
-	//i　にしなくていい
 	turn: function(direction) {
 		for (var i=0; i<this.cell.pos.length; ++i) {
 			if (direction=="right") {
@@ -459,7 +482,7 @@ var manager = {
 		nextNames[this.curNum] = Object.keys(Tetrimino)[rand(Object.keys(Tetrimino).length)];
 		++this.curNum;
 
-		if (!(this.curNum < Object.keys(Tetrimino).lenth))
+		if (this.curNum >= Object.keys(Tetrimino).length)
 			this.curNum = 0;
 
 		return $.extend(true, {}, Tetrimino[nextNames[this.curNum]]);
