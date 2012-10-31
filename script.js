@@ -30,11 +30,14 @@ function cos(rad) { return ~~(Math.cos(rad)); } //バグの温床
 function sin(rad) { return ~~(Math.sin(rad)); } //バグの温床
 function rand(num) { return Math.random() * num | 0; } //return x < num
 
+//boardの名前変えるべき
 var board = {
-	size: {x: 300, y: 300},
+	size: {x: 180, y: 300},
 
 	xAryList: new Array(),
 	yAryList: new Array(),
+
+	dLine: new Array(),
 
 	init: function() {
 		//xAryList
@@ -61,10 +64,32 @@ var board = {
 		}
 	},
 
-	remove: function(blockCell) {
-		for each (var pos in blockCell) {
-			board.xAryList[pos.y][pos.x] = false;
-			board.yAryList[pos.x][pos.y] = false;
+	//view
+	clear: function(clearFunc) {
+		for (var i=0; i<this.size.y/CELL_SIZE; ++i) {
+			for (var o=0; o<this.size.x/CELL_SIZE; ++o) {
+				if ( _.indexOf(this.xAryList[i], false) == -1 )
+					this.dLine.push(i);
+			}
+		}
+
+		for each (var line in this.dLine)
+			clearFunc(0, this.yAryList[0][line], (BOARD_MAX_X+1)*CELL_SIZE, CELL_SIZE);
+		
+	},
+
+	//system
+	remove: function() {
+		for each (var line in this.dLine) {
+			//xAryList
+			for (var o=0; o<this.size.x/CELL_SIZE; ++o)
+				this.xAryList[line] = false;
+
+			//yAryList
+			for (var i=0; i<this.size.x/CELL_SIZE; ++i) {
+				for (var o=0; o<this.size.y/CELL_SIZE; ++o)
+					this.yAryList[i][line] = false;
+			}
 		}
 	},
 	
@@ -72,19 +97,22 @@ var board = {
 		//xAryList
 		for (var i=0; i<this.size.y/CELL_SIZE; ++i) {
 			for (var o=0; o<this.size.x/CELL_SIZE; ++o) {
-				if ( _.indexOf(this.xAryList[i], false) != -1 )
+				if ( _.indexOf(this.xAryList[i], false) == -1 )
 					return true;
 			}
 		}
 
-		//yAryList
-		for (var i=0; i<this.size.x/CELL_SIZE; ++i) {
-			for (var o=0; o<this.size.y/CELL_SIZE; ++o)
-				if ( _.indexOf(this.yAryList[i], false) != -1 )
-					return true;
-		}
-
 		return false;
+	},
+
+	fall: function() {
+
+
+	},
+
+	draw: function() {
+
+
 	}
 }
 
@@ -324,8 +352,12 @@ var manager = {
 			curBlock.draw(this.fillRectM);
 		} else {
 			board.add(curBlock.cell.pos);
-			if ( board.canRemove() )
+			if ( board.canRemove() ) {
+				board.clear(this.clearRectM);
 				board.remove();
+				board.fall();
+				board.draw();
+			}
 			curBlock.cell = this.callNextBlock();
 		}
 
