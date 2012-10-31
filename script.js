@@ -9,7 +9,7 @@ var BLOCK = {
 		base: {x: 1, y: 0},
 		color: "#6699ff"	
 	},
-	yellow: {
+/*	yellow: {
 		pos: [
 			{x: 0, y: 0},
 			{x: 1, y: 0},
@@ -18,7 +18,7 @@ var BLOCK = {
 		],
 		base: {x: 0.5, y: 0.5},
 		color: "yellow"
-	}
+	}*/
 };
 
 var PI = Math.PI;
@@ -26,8 +26,8 @@ var	CELL_SIZE = 30;
 var	speed = 1000;
 var nextNames = new Array;
 
-function cos(rad) { return ~~(Math.cos(rad)); }
-function sin(rad) { return ~~(Math.sin(rad)); }
+function cos(rad) { return ~~(Math.cos(rad)); } //バグの温床
+function sin(rad) { return ~~(Math.sin(rad)); } //バグの温床
 function rand(num) { return Math.random() * num | 0; } //return x < num
 
 var board = {
@@ -113,6 +113,9 @@ var curBlock = {
 
 	slide: function(direction) {
 		if (this.canSlide(direction)) {
+			if (direction=="right")     ++this.cell.base.x;
+			else if (direction=="left") --this.cell.base.x;
+
 			for each (var pos in this.cell.pos) {
 				if (direction=="right")     ++pos.x;
 				else if (direction=="left") --pos.x;
@@ -124,29 +127,21 @@ var curBlock = {
 	turn: function(direction) {
 		if ( this.canTurn(direction) ) {
 			for each (var pos in this.cell.pos) {
-
-
-
+				if (direction=="right") {
+					cx = (pos.x-this.cell.base.x) * cos(PI/2) -
+						 (pos.y-this.cell.base.y) * sin(PI/2) + this.cell.base.x;
+					cy = (pos.x-this.cell.base.x) * sin(PI/2) +
+						 (pos.y-this.cell.base.y) * cos(PI/2) + this.cell.base.y;
+				} else if (direction=="left") {
+					cx = (pos.x-this.cell.base.x) * cos(-PI/2) -
+						 (pos.y-this.cell.base.y) * sin(-PI/2) + this.cell.base.x;
+					cy = (pos.x-this.cell.base.x) * sin(-PI/2) +
+						 (pos.y-this.cell.base.y) * cos(-PI/2) + this.cell.base.y;
+				}
+				pos.x = cx;
+				pos.y = cy;
 			}
-		}
 
-
-
-
-		for each (var pos in this.cell.pos) {
-			if (direction=="right") {
-				cx = (pos.x-this.cell.base.x) * cos(PI/2) -
-					 (pos.y-this.cell.base.y) * sin(PI/2) + this.cell.base.x;
-				cy = (pos.x-this.cell.base.x) * sin(PI/2) +
-					 (pos.y-this.cell.base.y) * cos(PI/2) + this.cell.base.y;
-			} else if (direction=="left") {
-				cx = (pos.x-this.cell.base.x) * cos(-PI/2) -
-					 (pos.y-this.cell.base.y) * sin(-PI/2) + this.cell.base.x;
-				cy = (pos.x-this.cell.base.x) * sin(-PI/2) +
-					 (pos.y-this.cell.base.y) * cos(-PI/2) + this.cell.base.y;
-			}
-			pos.x = cx;
-			pos.y = cy;
 		}
 	},
 
@@ -168,6 +163,9 @@ var curBlock = {
 		}
 
 		return true;
+
+		//fieldチェックの関数とブロックの上かの判定関数をつくって
+		//わけてみたい
 	},
 
 	canSlide: function(direction) {
@@ -202,12 +200,28 @@ var curBlock = {
 	canTurn: function(direction) {
 		for each (var pos in this.cell.pos) {
 			if (direction=="right") {
-
+				cx = (pos.x-this.cell.base.x) * cos(PI/2) -
+					 (pos.y-this.cell.base.y) * sin(PI/2) + this.cell.base.x;
+				cy = (pos.x-this.cell.base.x) * sin(PI/2) +
+					 (pos.y-this.cell.base.y) * cos(PI/2) + this.cell.base.y;
 			} else if (direction=="left") {
-
-
-
+				cx = (pos.x-this.cell.base.x) * cos(-PI/2) -
+					 (pos.y-this.cell.base.y) * sin(-PI/2) + this.cell.base.x;
+				cy = (pos.x-this.cell.base.x) * sin(-PI/2) +
+					 (pos.y-this.cell.base.y) * cos(-PI/2) + this.cell.base.y;
 			}
+
+			if ( (BOARD_MAX_X - cx) < 0 || cx < 0 ||
+				 (BOARD_MAX_Y - cy) < 0 || cy < 0 )
+				return false;
+
+			for each ( var xSolid in _.compact(board.xAryList[cy]) ) {
+				if (cx == xSolid) return false;
+			}
+			for each ( var ySolid in _.compact(board.yAryList[cx]) ) {
+				if (cy == ySolid) return false;
+			}
+
 		}
 
 		return true;
@@ -233,8 +247,9 @@ var manager = {
 	},
 
 	run: function() {
-		// start押しまくったらバグ
 		$("#start").on("click", function() {
+			$(this).css({display: "none"});
+
 			board.init();
 			manager.blockAccurate();
 
@@ -248,7 +263,7 @@ var manager = {
 			for (var i=0; i<Object.keys(BLOCK).length; ++i)
 				nextNames.push(Object.keys(BLOCK)[rand(Object.keys(BLOCK).length)]);
 
-			curBlock.cell = $.extend(true, BLOCK[ nextNames[manager.curNum] ]);
+			curBlock.cell = $.extend(true, {}, BLOCK[ nextNames[manager.curNum] ]);
 
 			$("html").keypress(function(e) {
 				curBlock.clear(manager.clearRectM);
@@ -284,6 +299,7 @@ var manager = {
 		}
 
 		console.log(board);
+		console.log("curBlock",curBlock);
 
 	},
 
@@ -302,13 +318,15 @@ var manager = {
 		if (!(this.curNum < Object.keys(BLOCK).lenth))
 			this.curNum = 0;
 
-		return $.extend(true, BLOCK[nextNames[this.curNum]]);
+		return $.extend(true, {}, BLOCK[nextNames[this.curNum]]);
 	},
 
 	blockAccurate: function() {
 		for each(var color in Object.keys(BLOCK)) {
 			for each (var pos in BLOCK[color].pos)
 				pos.x += (board.yAryList.length-2)/2 - 1;
+
+			BLOCK[color].base.x += (board.yAryList.length-2)/2 - 1;
 		}
 	}
 }; 
