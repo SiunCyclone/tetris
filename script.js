@@ -1,5 +1,5 @@
 var Tetrimino = {
-	blue: {
+	orange: {
 		pos: [
 			{x: 0, y: 0},
 			{x: 1, y: 0},
@@ -7,9 +7,8 @@ var Tetrimino = {
 			{x: 0, y: 1}
 		],
 		base: {x: 1, y: 0},
-		color: "#6699ff"	
-	}
-/*
+		color: "#e87812"
+	},
 	yellow: {
 		pos: [
 			{x: 0, y: 0},
@@ -18,10 +17,62 @@ var Tetrimino = {
 			{x: 1, y: 1}
 		],
 		base: {x: 0.5, y: 0.5},
-		color: "yellow"
+		color: "#ffd000"
+	},
+	red: {
+		pos: [
+			{x: 0, y: 0},
+			{x: 1, y: 0},
+			{x: 1, y: 1},
+			{x: 2, y: 1},
+		],
+		base: {x: 1, y: 0},
+		color: "#ff0000"
+	},
+	purple: {
+		pos: [
+			{x: 0, y: 0},
+			{x: 1, y: 0},
+			{x: 2, y: 0},
+			{x: 1, y: 1},
+		],
+		base: {x: 1, y: 0},
+		color: "#dc00e0"
+	},
+	green: {
+		pos: [
+			{x: 1, y: 0},
+			{x: 2, y: 0},
+			{x: 0, y: 1},
+			{x: 1, y: 1},
+		],
+		base: {x: 1, y: 0},
+		color: "#00ff00"
+	},
+	blue: {
+		pos: [
+			{x: 0, y: 0},
+			{x: 1, y: 0},
+			{x: 2, y: 0},
+			{x: 2, y: 1},
+		],
+		base: {x: 1, y: 0},
+		color: "#0000eb"
+	},
+	cyan: {
+		pos: [
+			{x: 1, y: 0},
+			{x: 2, y: 0},
+			{x: 3, y: 0},
+			{x: 4, y: 0},
+		],
+		base: {x: 1, y: 0},
+		color: "#02e4e6"
 	}
-*/
 };
+
+//どこに落ちるか表示
+//スペア
 
 var PI = Math.PI;
 var	CELL_SIZE = 30;
@@ -34,7 +85,7 @@ function rand(num) { return Math.random() * num | 0; } //return x < num
 
 //boardの名前変えるべき
 var board = {
-	size: {x: 180, y: 300},
+	size: {x: 300, y: 600},
 
 	field: new Array(),
 	dLine: new Array(),
@@ -42,22 +93,26 @@ var board = {
 
 	init: function() {
 		for (var i=0; i<this.size.x/CELL_SIZE; ++i)
-			this.emptyLine.push(false);
+			this.emptyLine.push({flag: false, color: null});
 
 		for (var i=0; i<this.size.y/CELL_SIZE; ++i)
 			this.field.push( $.extend(true, [], this.emptyLine) );
 	},
 
-	update: function(drawFunc) {
+	update: function(drawFunc, colorFunc) {
 		if ( this.canRemove() )
 			this.remove();
 
-		this.draw(drawFunc);
+		this.draw(drawFunc, colorFunc);
 	},
 
-	add: function(curPosAry) {
-		for each (var pos in curPosAry)
-			this.field[pos.y][pos.x] = true;
+	add: function(curCell) {
+		for each (var pos in curCell.pos) {
+			console.log(pos.y);
+			this.field[pos.y][pos.x].flag = true;
+			this.field[pos.y][pos.x].color = curCell.color;
+			console.log(this.field[pos.y]);
+		}
 	},
 
 	remove: function() {
@@ -68,10 +123,16 @@ var board = {
 		this.dLine = [];
 	},
 	
+	//もうすこし きれいにしたい
 	canRemove: function() {
+		var t;
 		for (var y=0; y<this.size.y/CELL_SIZE; ++y) {
-			if ( _.indexOf(this.field[y], false) == -1 )
-				this.dLine.push(y);
+			t = true;
+			for (var x=0; x<this.size.x/CELL_SIZE; ++x) {
+				if (this.field[y][x].flag == false)
+					t = false;
+			}
+			if (t) this.dLine.push(y);
 		}		
 
 		if ( _.isEmpty(this.dLine) )
@@ -79,11 +140,13 @@ var board = {
 		else return true;
 	},
 
-	draw: function(drawFunc) {
+	draw: function(drawFunc, colorFunc) {
 		for (var y=0; y<this.size.y/CELL_SIZE; ++y) {
 			for (var x=0; x<this.size.x/CELL_SIZE; ++x) {
-				if (this.field[y][x])
+				if (this.field[y][x].flag) {
+					colorFunc(this.field[y][x].color);
 					drawFunc(x, y, CELL_SIZE, CELL_SIZE);
+				}
 			}
 		}
 	}
@@ -92,17 +155,18 @@ var board = {
 var curBlock = {
 	cell: new Object,
 
-	update: function(drawFunc) {
+	update: function(drawFunc, colorFunc) {
 		if ( this.canFall() ) this.fall();
 		else {
-			board.add(this.cell.pos);
+			board.add(this.cell);
 			this.cell = manager.callNextBlock();
 		}
 
-		this.draw(drawFunc);
+		this.draw(drawFunc, colorFunc);
 	},
 
-	draw: function(drawFunc) {
+	draw: function(drawFunc, colorFunc) {
+		colorFunc(this.cell.color);
 		for each (var pos in this.cell.pos)
 			drawFunc(pos.x, pos.y, CELL_SIZE, CELL_SIZE);
 	},
@@ -193,7 +257,7 @@ var curBlock = {
 			//SolidBlock
 			for (var y=0; y<board.size.y/CELL_SIZE; ++y) {
 				if (pos.y < y) {
-					if (board.field[y][pos.x] && (y-pos.y) <= 1)
+					if (board.field[y][pos.x].flag && (y-pos.y) <= 1)
 						return false;
 				}
 			}
@@ -215,7 +279,7 @@ var curBlock = {
 				//SolidBlock
 				for (var x=0; x<board.size.x/CELL_SIZE; ++x) {
 					if (pos.x < x) {
-						if (board.field[pos.y][x] && (x-pos.x) <= 1)
+						if (board.field[pos.y][x].flag && (x-pos.x) <= 1)
 							return false;
 					}
 				}
@@ -227,7 +291,7 @@ var curBlock = {
 				//SolidBlock
 				for (var x=0; x<board.size.x/CELL_SIZE; ++x) {
 					if (pos.x > x) {
-						if (board.field[pos.y][x] && (pos.x-x) <= 1)
+						if (board.field[pos.y][x].flag && (pos.x-x) <= 1)
 							return false;
 					}
 				}
@@ -257,7 +321,7 @@ var curBlock = {
 				return false;
 
 			//SolidBlock
-			if (board.field[this.cy][this.cx])
+			if (board.field[this.cy][this.cx].flag)
 				return false;
 		}
 
@@ -298,10 +362,10 @@ var manager = {
 			$("html").keypress(function(e) {
 				curBlock.clear(manager.clearRectM);
 				curBlock.move(e);
-				curBlock.draw(manager.fillRectM);
+				curBlock.draw(manager.fillRectM, manager.setColor);
 			});
 
-			curBlock.draw(manager.fillRectM);
+			curBlock.draw(manager.fillRectM, manager.setColor);
 			setTimeout(function() { manager.main() }, speed);		
 		});
 
@@ -320,8 +384,10 @@ var manager = {
 	update: function() {
 		this.clearView();
 
-		curBlock.update(this.fillRectM);
-		board.update(this.fillRectM);
+		curBlock.update(this.fillRectM, this.setColor);
+		board.update(this.fillRectM, this.setColor);
+
+		console.log(board);
 	},
 
 	fillRectM: function(x, y, width, height) {
@@ -330,6 +396,10 @@ var manager = {
 
 	clearRectM: function(x, y, width, height) {
 		manager.context.clearRect(x*CELL_SIZE, y*CELL_SIZE, width, height);
+	},
+
+	setColor: function(color) {
+		manager.context.fillStyle = color;
 	},
 
 	callNextBlock: function() {
