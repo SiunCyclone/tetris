@@ -74,7 +74,6 @@ var Tetrimino = {
 var PI = Math.PI;
 var	CELL_SIZE = 30;
 var	speed = 500;
-var nextNames = new Array;
 
 function cos(rad) { return ~~(Math.cos(rad)); } //バグの温床
 function sin(rad) { return ~~(Math.sin(rad)); } //バグの温床
@@ -146,14 +145,65 @@ var board = {
 	}
 }
 
+var holdBox = {
+	canvas: null,
+	context: null,
+
+	size: {x: 120, y: 120},
+
+	init: function() {
+		this.canvas = document.getElementById("holdBox");
+		if (!this.canvas || !this.canvas.getContext) {
+			alert("No Canvas support in your browser...");
+			return;
+		}
+		this.context = this.canvas.getContext("2d");
+		this.context.strokeRect(1, 1, this.size.x, this.size.y);
+	},
+
+	draw: function(drawFunc, colorFunc) {
+		/*
+		colorFunc(Tetrimino[curBlock.holdName].color);
+		for each (var pos in Tetrimino[curBlock.holdName])
+			drawFunc(pos.x, pos.y, CELL_SIZE, CELL_SIZE);
+		*/
+	}
+}
+
+var nextBoxList = {
+	nextNames: new Array,
+
+	size: {x: 240, y: 450},
+
+	init: function() {
+		this.canvas = document.getElementById("nextBoxList");
+		if (!this.canvas || !this.canvas.getContext) {
+			alert("No Canvas support in your browser...");
+			return;
+		}
+		this.context = this.canvas.getContext("2d");
+		this.context.strokeRect(1, 1, this.size.x, this.size.y);
+	},
+
+	draw: function(drawFunc, colorFunc) {
+	/*
+		colorFunc(Tetrimino[curBlock.holdName].color);
+		for each (var pos in Tetrimino[curBlock.holdName])
+			drawFunc(pos.x, pos.y, CELL_SIZE, CELL_SIZE);
+*/
+	}
+}
+
+//落とすと色が少し濃い
+//落とすと影残る
 var curBlock = {
 	cell: new Object,
 	shade: new Array,
-	spareName: null,
-	canSpare: true,
+	holdName: null,
+	canhold: true,
 	
 	init: function() {
-		curBlock.cell = $.extend(true, {}, Tetrimino[ nextNames[manager.curNum] ]);
+		curBlock.cell = $.extend(true, {}, Tetrimino[ nextBoxList.nextNames[gameBoard.curNum] ]);
 		for each (var pos in this.cell.pos)
 			this.shade.push({x: pos.x, y: pos.y});
 	},
@@ -162,10 +212,10 @@ var curBlock = {
 		if ( this.canFall() ) this.fall();
 		else {
 			board.add(this.cell);
-			this.cell = manager.callNextBlock();
+			this.cell = gameBoard.callNextBlock();
 			for (var i=0; i<this.cell.pos.length; ++i)
 				this.shade[i] = {x: this.cell.pos[i].x, y: this.cell.pos[i].y};
-			this.canSpare = true;
+			this.canhold = true;
 		}
 
 		this.draw(drawFunc, colorFunc);
@@ -233,7 +283,7 @@ var curBlock = {
 			//まだ動ける
 			while ( this.canFall() )
 				this.fall();	
-			manager.clearView();
+			gameBoard.clearView();
 			this.update(drawFunc, colorFunc, alphaFunc);
 			board.update(drawFunc, colorFunc);
 			break;
@@ -249,9 +299,10 @@ var curBlock = {
 
 		switch (e.charCode) {
 		case 32:
-			if (this.canSpare)
-				this.spare();
-			//スペア切り替え
+			if (this.canhold) {
+				this.hold();
+				holdBox.draw(drawFunc, colorFunc);
+			}
 			break;
 		case 99:
 			if ( this.canTurn("right") )
@@ -264,21 +315,22 @@ var curBlock = {
 		}
 	},
 
-	spare: function() {
-		if (this.spareName != null) {
-			if (manager.curNum >= Object.keys(Tetrimino).length)
-				nextNames[0] = this.spareName;
-			else nextNames[manager.curNum+1] = this.spareName;
+	//ちょっとおかしい
+	hold: function() {
+		if (this.holdName != null) {
+			if (gameBoard.curNum >= Object.keys(Tetrimino).length)
+				nextBoxList.nextNames[0] = this.holdName;
+			else nextBoxList.nextNames[gameBoard.curNum+1] = this.holdName;
 		}
-		this.spareName = nextNames[manager.curNum];
-		nextNames[manager.curNum] = Object.keys(Tetrimino)[rand(Object.keys(Tetrimino).length)];
-		++manager.curNum;
+		this.holdName = nextBoxList.nextNames[gameBoard.curNum];
+		nextBoxList.nextNames[gameBoard.curNum] = Object.keys(Tetrimino)[rand(Object.keys(Tetrimino).length)];
+		++gameBoard.curNum;
 
-		if (manager.curNum >= Object.keys(Tetrimino).length)
-			manager.curNum = 0;
+		if (gameBoard.curNum >= Object.keys(Tetrimino).length)
+			gameBoard.curNum = 0;
 
 		this.init();
-		this.canSpare = false;
+		this.canhold = false;
 	},
 
 	slide: function(direction) {
@@ -371,14 +423,14 @@ var curBlock = {
 		for each (var pos in this.cell.pos) {
 			if (direction=="right") {
 				this.cx = (pos.x-this.cell.base.x) * cos(PI/2) -
-					      (pos.y-this.cell.base.y) * sin(PI/2) + this.cell.base.x;
+                          (pos.y-this.cell.base.y) * sin(PI/2) + this.cell.base.x;
 				this.cy = (pos.x-this.cell.base.x) * sin(PI/2) +
-					 	  (pos.y-this.cell.base.y) * cos(PI/2) + this.cell.base.y;
+                          (pos.y-this.cell.base.y) * cos(PI/2) + this.cell.base.y;
 			} else if (direction=="left") {
 				this.cx = (pos.x-this.cell.base.x) * cos(-PI/2) -
-						  (pos.y-this.cell.base.y) * sin(-PI/2) + this.cell.base.x;
+                          (pos.y-this.cell.base.y) * sin(-PI/2) + this.cell.base.x;
 				this.cy = (pos.x-this.cell.base.x) * sin(-PI/2) +
-						  (pos.y-this.cell.base.y) * cos(-PI/2) + this.cell.base.y;
+                          (pos.y-this.cell.base.y) * cos(-PI/2) + this.cell.base.y;
 			}
 
 			//Field
@@ -395,23 +447,25 @@ var curBlock = {
 	}
 };
 
-var manager = {
+var gameBoard = {
 	canvas: null,
 	context: null,
 	
 	isPlaying: true,
 	curNum: 0,
 
+	MARGIN: null,
+
 	init: function() {
-		this.canvas = document.getElementById("tetorisu");
+		this.canvas = document.getElementById("tetris");
 		if (!this.canvas || !this.canvas.getContext) {
 			alert("No Canvas support in your browser...");
 			return;
 		}
 		this.context = this.canvas.getContext("2d");
-		this.context.strokeRect(1, 1, 
-								board.size.x+2 + board.size.x/CELL_SIZE,
-								board.size.y+2 + board.size.y/CELL_SIZE);
+		this.context.lineWidth = 2;
+		this.context.strokeRect(1, 1, board.size.x+2 + board.size.x/CELL_SIZE,
+                                board.size.y+2 + board.size.y/CELL_SIZE);
 
 		this.run();
 	},
@@ -421,35 +475,37 @@ var manager = {
 			$(this).css({display: "none"});
 
 			board.init();
-			manager.blockAccurate();
+			gameBoard.blockAccurate();
 
 			for (var i=0; i<Object.keys(Tetrimino).length; ++i)
-				nextNames.push(Object.keys( Tetrimino)[rand(Object.keys(Tetrimino).length)] );
+				nextBoxList.nextNames.push(Object.keys( Tetrimino)[rand(Object.keys(Tetrimino).length)] );
 
 			curBlock.init();
 
 			$("html").keypress(function(e) {
-				curBlock.clear(manager.clearRectM);
-				curBlock.move(e, manager.fillRectM, manager.setColor, manager.alphaChange);
-				curBlock.draw(manager.fillRectM, manager.setColor);
-				curBlock.drawShade(manager.fillRectM, manager.alphaChange);
+				curBlock.clear(gameBoard.clearRectM);
+				curBlock.move(e, gameBoard.fillRectM, gameBoard.setColor, gameBoard.alphaChange);
+				curBlock.draw(gameBoard.fillRectM, gameBoard.setColor);
+				curBlock.drawShade(gameBoard.fillRectM, gameBoard.alphaChange);
 			});
 
-			curBlock.draw(manager.fillRectM, manager.setColor);
-			curBlock.drawShade(manager.fillRectM, manager.alphaChange);
-			setTimeout(function() { manager.main() }, speed);		
+			curBlock.draw(gameBoard.fillRectM, gameBoard.setColor);
+			curBlock.drawShade(gameBoard.fillRectM, gameBoard.alphaChange);
+			nextBoxList.draw(gameBoard.fillRectM, gameBoard.setColor);
+
+			setTimeout(function() { gameBoard.main() }, speed);		
 		});
 
-		$("#stop").on("click", function() { manager.isPlaying = false; });
+		$("#stop").on("click", function() { gameBoard.isPlaying = false; });
 		$("#resume").on("click", function() {
-			manager.isPlaying = true;
-			manager.main();		
+			gameBoard.isPlaying = true;
+			gameBoard.main();		
 		});
 	},
 
 	main: function() {
 		this.update();
-		if (this.isPlaying) setTimeout(function() { manager.main() }, speed);
+		if (this.isPlaying) setTimeout(function() { gameBoard.main() }, speed);
 	},
 
 	update: function() {
@@ -460,11 +516,11 @@ var manager = {
 	},
 
 	fillRectM: function(x, y, width, height) {
-		manager.context.fillRect(x*CELL_SIZE+2+x, y*CELL_SIZE+2+y, width, height);
+		gameBoard.context.fillRect(x*CELL_SIZE+2+x, y*CELL_SIZE+2+y, width, height);
 	},
 
 	clearRectM: function(x, y, width, height) {
-		manager.context.clearRect(x*CELL_SIZE+2+x, y*CELL_SIZE+2+y, width, height);
+		gameBoard.context.clearRect(x*CELL_SIZE+2+x, y*CELL_SIZE+2+y, width, height);
 	},
 
 	clearView: function() {
@@ -472,21 +528,21 @@ var manager = {
 	},
 
 	setColor: function(color) {
-		manager.context.fillStyle = color;
+		gameBoard.context.fillStyle = color;
 	},
 
 	alphaChange: function(num) {
-		manager.context.globalAlpha = num;
+		gameBoard.context.globalAlpha = num;
 	},
 
 	callNextBlock: function() {
-		nextNames[this.curNum] = Object.keys(Tetrimino)[rand(Object.keys(Tetrimino).length)];
+		nextBoxList.nextNames[this.curNum] = Object.keys(Tetrimino)[rand(Object.keys(Tetrimino).length)];
 		++this.curNum;
 
 		if (this.curNum >= Object.keys(Tetrimino).length)
 			this.curNum = 0;
 
-		return $.extend(true, {}, Tetrimino[nextNames[this.curNum]]);
+		return $.extend(true, {}, Tetrimino[nextBoxList.nextNames[this.curNum]]);
 	},
 
 	blockAccurate: function() {
@@ -500,6 +556,8 @@ var manager = {
 }; 
 
 $(function() {
-	manager.init();
+	holdBox.init();
+	gameBoard.init();
+	nextBoxList.init();
 });
 
