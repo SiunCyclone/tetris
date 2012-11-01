@@ -145,6 +145,7 @@ var board = {
 	}
 }
 
+//gameBoardと似てるから型つくりたい。
 var holdBox = {
 	canvas: null,
 	context: null,
@@ -161,12 +162,28 @@ var holdBox = {
 		this.context.strokeRect(1, 1, this.size.x, this.size.y);
 	},
 
-	draw: function(drawFunc, colorFunc) {
-		/*
-		colorFunc(Tetrimino[curBlock.holdName].color);
-		for each (var pos in Tetrimino[curBlock.holdName])
-			drawFunc(pos.x, pos.y, CELL_SIZE, CELL_SIZE);
-		*/
+	draw: function() {
+		this.setColor(Tetrimino[curBlock.holdName].color);
+		console.log(Tetrimino[curBlock.holdName]);
+		for each (var pos in Tetrimino[curBlock.holdName].pos)
+			this.fillRectM(pos.x - ((board.size.x/CELL_SIZE) / 2 - 1), pos.y, CELL_SIZE, CELL_SIZE);
+	},
+
+	clearView: function() {
+		this.clearRectM(0, 0, holdBox.size.x + holdBox.size.x/CELL_SIZE,
+                        holdBox.size.y + holdBox.size.y/CELL_SIZE);
+	},
+
+	fillRectM: function(x, y, width, height) {
+		holdBox.context.fillRect(x*CELL_SIZE+x, y*CELL_SIZE+y, width, height);
+	},
+	
+	clearRectM: function(x, y, width, height) {
+		holdBox.context.clearRect(x*CELL_SIZE+x, y*CELL_SIZE+y, width, height);
+	},
+
+	setColor: function(color) {
+		holdBox.context.fillStyle = color;
 	}
 }
 
@@ -301,7 +318,8 @@ var curBlock = {
 		case 32:
 			if (this.canhold) {
 				this.hold();
-				holdBox.draw(drawFunc, colorFunc);
+				holdBox.clearView();
+				holdBox.draw();
 			}
 			break;
 		case 99:
@@ -316,6 +334,7 @@ var curBlock = {
 	},
 
 	//ちょっとおかしい
+	//代わりに水色がることがある
 	hold: function() {
 		if (this.holdName != null) {
 			if (gameBoard.curNum >= Object.keys(Tetrimino).length)
