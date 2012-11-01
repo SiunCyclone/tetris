@@ -75,8 +75,8 @@ var PI = Math.PI;
 var	CELL_SIZE = 30;
 var	speed = 500;
 
-function cos(rad) { return ~~(Math.cos(rad)); } //バグの温床
-function sin(rad) { return ~~(Math.sin(rad)); } //バグの温床
+function cos(rad) { return ~~(Math.cos(rad)); } //check
+function sin(rad) { return ~~(Math.sin(rad)); } //check
 function rand(num) { return Math.random() * num | 0; } //return x < num
 
 var board = {
@@ -116,7 +116,6 @@ var board = {
 		this.dLine = [];
 	},
 	
-	//もうすこし きれいにしたい
 	canRemove: function() {
 		var t;
 		for (var y=0; y<this.size.y/CELL_SIZE; ++y) {
@@ -145,7 +144,6 @@ var board = {
 	}
 }
 
-//gameBoardと似てるから型つくりたい。
 var holdBox = {
 	canvas: null,
 	context: null,
@@ -199,7 +197,6 @@ var holdBox = {
 	}
 }
 
-//curNum
 var nextBoxList = {
 	canvas: null,
 	context: null,
@@ -223,13 +220,12 @@ var nextBoxList = {
 		for (var i=0; i<Object.keys(Tetrimino).length; ++i)
 			this.nextNames.push(Object.keys( Tetrimino)[rand(Object.keys(Tetrimino).length)] );
 
-		for (var i=0; i<this.nextNames.length-1; ++i) { //exclude curNum
+		for (var i=0; i<this.nextNames.length-1; ++i) { 
 			this.drawLine(i*3);
 			this.drawBackGround(i*3);
 		}
 	},
 
-	//tは仕方がないんだろうか
 	draw: function() {
 		var t = 0;
 		if (gameBoard.curNum < this.nextNames.length) {
@@ -436,7 +432,7 @@ var curBlock = {
 		}
 	},
 
-	//i にしなくていい
+	//i
 	cx: null, cy: null,
 	turn: function(direction) {
 		for (var i=0; i<this.cell.pos.length; ++i) {

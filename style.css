@@ -4,7 +4,8 @@ body {
 
 #wrapper {
 	position: absolute;
-	width: 860px;
+//	width: 860px;
+	width: 700px;
 	height: 680px;
 	border: 6px solid #000000;
 }
@@ -40,7 +41,7 @@ body {
 	position: absolute;
 	top: 70px;
 	left: 530px;
-	border: 4px solid #330066;
+//	border: 4px solid #330066;
 }
 
 
