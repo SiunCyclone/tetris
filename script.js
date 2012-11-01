@@ -296,7 +296,6 @@ var curBlock = {
 				this.slide("left");
 			break;
 		case 38:
-			//まだ動ける
 			while ( this.canFall() )
 				this.fall();	
 			gameBoard.clearView();
@@ -470,7 +469,7 @@ var gameBoard = {
 	isPlaying: true,
 	curNum: 0,
 
-	MARGIN: null,
+	lsWh: null,
 
 	init: function() {
 		this.canvas = document.getElementById("tetris");
@@ -479,9 +478,14 @@ var gameBoard = {
 			return;
 		}
 		this.context = this.canvas.getContext("2d");
-		this.context.lineWidth = 2;
-		this.context.strokeRect(1, 1, board.size.x+2 + board.size.x/CELL_SIZE,
-                                board.size.y+2 + board.size.y/CELL_SIZE);
+		this.context.lineWidth = 4;
+
+		this.lsWh = this.context.lineWidth;
+
+		this.setColor("#003300");
+		this.context.strokeRect(this.lsWh/2, this.lsWh/2,
+                                board.size.x+this.lsWh + board.size.x/CELL_SIZE,
+                                board.size.y+this.lsWh + board.size.y/CELL_SIZE);
 
 		this.run();
 	},
@@ -532,19 +536,20 @@ var gameBoard = {
 	},
 
 	fillRectM: function(x, y, width, height) {
-		gameBoard.context.fillRect(x*CELL_SIZE+2+x, y*CELL_SIZE+2+y, width, height);
+		gameBoard.context.fillRect(x*CELL_SIZE+gameBoard.lsWh+x, y*CELL_SIZE+gameBoard.lsWh+y, width, height);
 	},
 
 	clearRectM: function(x, y, width, height) {
-		gameBoard.context.clearRect(x*CELL_SIZE+2+x, y*CELL_SIZE+2+y, width, height);
+		gameBoard.context.clearRect(x*CELL_SIZE+gameBoard.lsWh+x, y*CELL_SIZE+gameBoard.lsWh+y, width, height);
 	},
 
 	clearView: function() {
-		this.clearRectM(0, 0, board.size.x + board.size.x/CELL_SIZE, board.size.y + board.size.y/CELL_SIZE);
+		gameBoard.context.clearRect(gameBoard.lsWh, gameBoard.lsWh, board.size.x + board.size.x/CELL_SIZE-2, board.size.y + board.size.y/CELL_SIZE-2);
 	},
 
 	setColor: function(color) {
 		gameBoard.context.fillStyle = color;
+		gameBoard.context.strokeStyle = color;
 	},
 
 	alphaChange: function(num) {
