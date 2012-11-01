@@ -181,14 +181,16 @@ var holdBox = {
 	},
 
 	fillRectM: function(x, y, width, height) {
-		holdBox.context.fillRect(x*CELL_SIZE+holdBox.lnWh+x, y*CELL_SIZE+holdBox.lnWh+y, width, height);
+		holdBox.context.fillRect(x*CELL_SIZE+holdBox.lnWh+x,
+								 y*CELL_SIZE+holdBox.lnWh+y,
+							     width, height);
 	},
 
 	drawBackGround: function() {
 		this.setColor("#000000");
 		holdBox.context.fillRect(this.lnWh, this.lnWh, 
-								   holdBox.size.x + holdBox.size.x/CELL_SIZE,
-								   holdBox.size.y + holdBox.size.y/CELL_SIZE);
+								 holdBox.size.x + holdBox.size.x/CELL_SIZE,
+								 holdBox.size.y + holdBox.size.y/CELL_SIZE);
 	},
 
 	setColor: function(color) {
@@ -197,10 +199,15 @@ var holdBox = {
 	}
 }
 
+//curNum
 var nextBoxList = {
-	nextNames: new Array,
+	canvas: null,
+	context: null,
 
-	size: {x: 240, y: 450},
+	nextNames: new Array,
+	size: {x: 120, y: 60},
+
+	lnWh: null,
 
 	init: function() {
 		this.canvas = document.getElementById("nextBoxList");
@@ -209,20 +216,71 @@ var nextBoxList = {
 			return;
 		}
 		this.context = this.canvas.getContext("2d");
-		this.context.strokeRect(1, 1, this.size.x, this.size.y);
+		this.context.lineWidth = 4;
+
+		this.lnWh = this.context.lineWidth;
+
+		for (var i=0; i<Object.keys(Tetrimino).length; ++i)
+			this.nextNames.push(Object.keys( Tetrimino)[rand(Object.keys(Tetrimino).length)] );
+
+		for (var i=0; i<this.nextNames.length-1; ++i) { //exclude curNum
+			this.drawLine(i*3);
+			this.drawBackGround(i*3);
+		}
 	},
 
-	draw: function(drawFunc, colorFunc) {
-	/*
-		colorFunc(Tetrimino[curBlock.holdName].color);
-		for each (var pos in Tetrimino[curBlock.holdName])
-			drawFunc(pos.x, pos.y, CELL_SIZE, CELL_SIZE);
-*/
+	//tは仕方がないんだろうか
+	draw: function() {
+		var t = 0;
+		if (gameBoard.curNum < this.nextNames.length) {
+			for (var i=gameBoard.curNum+1; i<this.nextNames.length; ++i) {
+				this.setColor(Tetrimino[ this.nextNames[i] ].color);
+				for each (var pos in Tetrimino[ this.nextNames[i] ].pos) {
+					this.fillRectM(pos.x - ((board.size.x/CELL_SIZE)/2 - 1),
+								   pos.y + t,
+								   CELL_SIZE, CELL_SIZE);
+				}
+				t += 3;
+			}
+		}
+
+		for (var i=0; i<gameBoard.curNum; ++i) {
+			this.setColor(Tetrimino[ this.nextNames[i] ].color);
+			for each (var pos in Tetrimino[ this.nextNames[i] ].pos) {
+				this.fillRectM(pos.x - ((board.size.x/CELL_SIZE)/2 - 1),
+							   pos.y + t,
+							   CELL_SIZE, CELL_SIZE);
+			}
+			t += 3;
+		}
+	},
+
+	fillRectM: function(x, y, width, height) {
+		nextBoxList.context.fillRect(x*CELL_SIZE+nextBoxList.lnWh+x,
+									 y*CELL_SIZE+nextBoxList.lnWh+y,
+									 width, height);
+	},
+
+	drawLine: function(i) {
+		this.setColor("#330099");
+		this.context.strokeRect(this.lnWh/2, this.lnWh/2 + i*CELL_SIZE + i,
+								nextBoxList.size.x+this.lnWh + nextBoxList.size.x/CELL_SIZE,
+								nextBoxList.size.y+this.lnWh + nextBoxList.size.y/CELL_SIZE);
+	},
+
+	drawBackGround: function(i) {
+		this.setColor("#000000");
+		nextBoxList.context.fillRect(this.lnWh, this.lnWh + i*CELL_SIZE + i, 
+								   nextBoxList.size.x + nextBoxList.size.x/CELL_SIZE,
+								   nextBoxList.size.y + nextBoxList.size.y/CELL_SIZE);
+	},
+
+	setColor: function(color) {
+		nextBoxList.context.fillStyle = color;
+		nextBoxList.context.strokeStyle = color;
 	}
 }
 
-//落とすと色が少し濃い
-//落とすと影残る
 var curBlock = {
 	cell: new Object,
 	shade: new Array,
@@ -240,9 +298,12 @@ var curBlock = {
 		else {
 			board.add(this.cell);
 			this.cell = gameBoard.callNextBlock();
+			this.canhold = true;
 			for (var i=0; i<this.cell.pos.length; ++i)
 				this.shade[i] = {x: this.cell.pos[i].x, y: this.cell.pos[i].y};
-			this.canhold = true;
+			for (var i=0; i<nextBoxList.nextNames.length-1; ++i)
+				nextBoxList.drawBackGround(i*3);
+			nextBoxList.draw();
 		}
 
 		this.draw(drawFunc, colorFunc);
@@ -329,6 +390,9 @@ var curBlock = {
 				this.hold();
 				holdBox.drawBackGround();
 				holdBox.draw();
+				for (var i=0; i<nextBoxList.nextNames.length-1; ++i)
+					nextBoxList.drawBackGround(i*3);
+				nextBoxList.draw();
 			}
 			break;
 		case 99:
@@ -343,17 +407,20 @@ var curBlock = {
 	},
 
 	hold: function() {
-		if (this.holdName != null) {
-			if (gameBoard.curNum >= Object.keys(Tetrimino).length-1)
-				nextBoxList.nextNames[0] = this.holdName;
-			else nextBoxList.nextNames[gameBoard.curNum+1] = this.holdName;
-		}
-		this.holdName = nextBoxList.nextNames[gameBoard.curNum];
-		nextBoxList.nextNames[gameBoard.curNum] = Object.keys(Tetrimino)[rand(Object.keys(Tetrimino).length)];
-		++gameBoard.curNum;
+		var t;
 
-		if (gameBoard.curNum >= Object.keys(Tetrimino).length)
-			gameBoard.curNum = 0;
+		if (this.holdName == null) {
+			this.holdName = nextBoxList.nextNames[gameBoard.curNum];
+			nextBoxList.nextNames[gameBoard.curNum] = Object.keys(Tetrimino)[rand(Object.keys(Tetrimino).length)];
+
+			++gameBoard.curNum;
+			if (gameBoard.curNum >= Object.keys(Tetrimino).length)
+				gameBoard.curNum = 0;
+		} else {
+			t = this.holdName;
+			this.holdName =  nextBoxList.nextNames[gameBoard.curNum];
+			nextBoxList.nextNames[gameBoard.curNum] = t;
+		}	
 
 		this.init();
 		this.canhold = false;
@@ -508,24 +575,23 @@ var gameBoard = {
 
 			board.init();
 			gameBoard.blockAccurate();
-
-			for (var i=0; i<Object.keys(Tetrimino).length; ++i)
-				nextBoxList.nextNames.push(Object.keys( Tetrimino)[rand(Object.keys(Tetrimino).length)] );
-
 			curBlock.init();
 
 			$("html").keypress(function(e) {
 				curBlock.clear(gameBoard.clearRectM);
 				curBlock.move(e, gameBoard.fillRectM, gameBoard.setColor, gameBoard.alphaChange);
+
 				gameBoard.drawBackGround();
+
 				board.draw(gameBoard.fillRectM, gameBoard.setColor);
+
 				curBlock.draw(gameBoard.fillRectM, gameBoard.setColor);
 				curBlock.drawShade(gameBoard.fillRectM, gameBoard.alphaChange);
 			});
 
 			curBlock.draw(gameBoard.fillRectM, gameBoard.setColor);
 			curBlock.drawShade(gameBoard.fillRectM, gameBoard.alphaChange);
-			nextBoxList.draw(gameBoard.fillRectM, gameBoard.setColor);
+			nextBoxList.draw();
 
 			setTimeout(function() { gameBoard.main() }, speed);		
 		});
