@@ -150,7 +150,9 @@ var holdBox = {
 	canvas: null,
 	context: null,
 
-	size: {x: 120, y: 120},
+	size: {x: 120, y: 60},
+
+	lnWh: null,
 
 	init: function() {
 		this.canvas = document.getElementById("holdBox");
@@ -159,30 +161,39 @@ var holdBox = {
 			return;
 		}
 		this.context = this.canvas.getContext("2d");
-		this.context.strokeRect(1, 1, this.size.x, this.size.y);
+		this.context.lineWidth = 4;
+
+		this.lnWh = this.context.lineWidth;
+
+		this.setColor("#ffebcd");
+		this.context.strokeRect(this.lnWh/2, this.lnWh/2,
+                                holdBox.size.x+this.lnWh + holdBox.size.x/CELL_SIZE,
+                                holdBox.size.y+this.lnWh + holdBox.size.y/CELL_SIZE);
+		this.drawBackGround();
 	},
 
 	draw: function() {
 		this.setColor(Tetrimino[curBlock.holdName].color);
 		for each (var pos in Tetrimino[curBlock.holdName].pos)
-			this.fillRectM(pos.x - ((board.size.x/CELL_SIZE) / 2 - 1), pos.y, CELL_SIZE, CELL_SIZE);
-	},
-
-	clearView: function() {
-		this.clearRectM(0, 0, holdBox.size.x + holdBox.size.x/CELL_SIZE,
-                        holdBox.size.y + holdBox.size.y/CELL_SIZE);
+			this.fillRectM(pos.x - ((board.size.x/CELL_SIZE)/2 - 1),
+                           pos.y,
+                           CELL_SIZE, CELL_SIZE);
 	},
 
 	fillRectM: function(x, y, width, height) {
-		holdBox.context.fillRect(x*CELL_SIZE+x, y*CELL_SIZE+y, width, height);
+		holdBox.context.fillRect(x*CELL_SIZE+holdBox.lnWh+x, y*CELL_SIZE+holdBox.lnWh+y, width, height);
 	},
-	
-	clearRectM: function(x, y, width, height) {
-		holdBox.context.clearRect(x*CELL_SIZE+x, y*CELL_SIZE+y, width, height);
+
+	drawBackGround: function() {
+		this.setColor("#000000");
+		holdBox.context.fillRect(this.lnWh, this.lnWh, 
+								   holdBox.size.x + holdBox.size.x/CELL_SIZE,
+								   holdBox.size.y + holdBox.size.y/CELL_SIZE);
 	},
 
 	setColor: function(color) {
 		holdBox.context.fillStyle = color;
+		holdBox.context.strokeStyle = color;
 	}
 }
 
@@ -298,7 +309,7 @@ var curBlock = {
 		case 38:
 			while ( this.canFall() )
 				this.fall();	
-			gameBoard.clearView();
+			gameBoard.drawBackGround();
 			this.update(drawFunc, colorFunc, alphaFunc);
 			board.update(drawFunc, colorFunc);
 			break;
@@ -316,7 +327,7 @@ var curBlock = {
 		case 32:
 			if (this.canhold) {
 				this.hold();
-				holdBox.clearView();
+				holdBox.drawBackGround();
 				holdBox.draw();
 			}
 			break;
@@ -469,7 +480,7 @@ var gameBoard = {
 	isPlaying: true,
 	curNum: 0,
 
-	lsWh: null,
+	lnWh: null,
 
 	init: function() {
 		this.canvas = document.getElementById("tetris");
@@ -480,12 +491,13 @@ var gameBoard = {
 		this.context = this.canvas.getContext("2d");
 		this.context.lineWidth = 4;
 
-		this.lsWh = this.context.lineWidth;
+		this.lnWh = this.context.lineWidth;
 
 		this.setColor("#003300");
-		this.context.strokeRect(this.lsWh/2, this.lsWh/2,
-                                board.size.x+this.lsWh + board.size.x/CELL_SIZE,
-                                board.size.y+this.lsWh + board.size.y/CELL_SIZE);
+		this.context.strokeRect(this.lnWh/2, this.lnWh/2,
+                                board.size.x+this.lnWh + board.size.x/CELL_SIZE,
+                                board.size.y+this.lnWh + board.size.y/CELL_SIZE);
+		this.drawBackGround();
 
 		this.run();
 	},
@@ -505,6 +517,8 @@ var gameBoard = {
 			$("html").keypress(function(e) {
 				curBlock.clear(gameBoard.clearRectM);
 				curBlock.move(e, gameBoard.fillRectM, gameBoard.setColor, gameBoard.alphaChange);
+				gameBoard.drawBackGround();
+				board.draw(gameBoard.fillRectM, gameBoard.setColor);
 				curBlock.draw(gameBoard.fillRectM, gameBoard.setColor);
 				curBlock.drawShade(gameBoard.fillRectM, gameBoard.alphaChange);
 			});
@@ -529,22 +543,25 @@ var gameBoard = {
 	},
 
 	update: function() {
-		this.clearView();
+		this.drawBackGround();
 
 		curBlock.update(this.fillRectM, this.setColor, this.alphaChange);
 		board.update(this.fillRectM, this.setColor);
 	},
 
+	drawBackGround: function() {
+		this.setColor("#000000");
+		gameBoard.context.fillRect(this.lnWh, this.lnWh, 
+								   board.size.x + board.size.x/CELL_SIZE,
+								   board.size.y + board.size.y/CELL_SIZE);
+	},
+
 	fillRectM: function(x, y, width, height) {
-		gameBoard.context.fillRect(x*CELL_SIZE+gameBoard.lsWh+x, y*CELL_SIZE+gameBoard.lsWh+y, width, height);
+		gameBoard.context.fillRect(x*CELL_SIZE+gameBoard.lnWh+x, y*CELL_SIZE+gameBoard.lnWh+y, width, height);
 	},
 
 	clearRectM: function(x, y, width, height) {
-		gameBoard.context.clearRect(x*CELL_SIZE+gameBoard.lsWh+x, y*CELL_SIZE+gameBoard.lsWh+y, width, height);
-	},
-
-	clearView: function() {
-		gameBoard.context.clearRect(gameBoard.lsWh, gameBoard.lsWh, board.size.x + board.size.x/CELL_SIZE-2, board.size.y + board.size.y/CELL_SIZE-2);
+		gameBoard.context.clearRect(x*CELL_SIZE+gameBoard.lnWh+x, y*CELL_SIZE+gameBoard.lnWh+y, width, height);
 	},
 
 	setColor: function(color) {
