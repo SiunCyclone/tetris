@@ -164,7 +164,6 @@ var holdBox = {
 
 	draw: function() {
 		this.setColor(Tetrimino[curBlock.holdName].color);
-		console.log(Tetrimino[curBlock.holdName]);
 		for each (var pos in Tetrimino[curBlock.holdName].pos)
 			this.fillRectM(pos.x - ((board.size.x/CELL_SIZE) / 2 - 1), pos.y, CELL_SIZE, CELL_SIZE);
 	},
@@ -333,11 +332,9 @@ var curBlock = {
 		}
 	},
 
-	//ちょっとおかしい
-	//代わりに水色がることがある
 	hold: function() {
 		if (this.holdName != null) {
-			if (gameBoard.curNum >= Object.keys(Tetrimino).length)
+			if (gameBoard.curNum >= Object.keys(Tetrimino).length-1)
 				nextBoxList.nextNames[0] = this.holdName;
 			else nextBoxList.nextNames[gameBoard.curNum+1] = this.holdName;
 		}
