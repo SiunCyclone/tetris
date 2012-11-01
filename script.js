@@ -112,6 +112,8 @@ var board = {
 		for each (var line in this.dLine) {
 			this.field.splice(line, 1)
 			this.field.unshift( $.extend(true, [], this.emptyLine) );
+			++gameBoard.line;
+			$("#line").html("Line : "+gameBoard.line);
 		}
 		this.dLine = [];
 	},
@@ -544,6 +546,8 @@ var gameBoard = {
 	curNum: 0,
 
 	lnWh: null,
+
+	line: 0,
 
 	init: function() {
 		this.canvas = document.getElementById("tetris");

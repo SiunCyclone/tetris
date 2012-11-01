@@ -6,7 +6,7 @@ Tetris
 ゲーム画面
 -------
 
-![ゲーム画面](http://i.imgur.com/ugN2V.png "ゲーム画面")
+![ゲーム画面](http://i.imgur.com/nWgEd.png "ゲーム画面")
 
 操作方法
 ------
