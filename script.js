@@ -102,19 +102,22 @@ var board = {
 	},
 
 	add: function(curCell) {
-		for each (var pos in curCell.pos) {
-			this.field[pos.y][pos.x].flag = true;
-			this.field[pos.y][pos.x].color = curCell.color;
-		}
+    var field = this.field;
+		_.each(curCell.pos, function(pos) {
+			field[pos.y][pos.x].flag = true;
+			field[pos.y][pos.x].color = curCell.color;
+		});
 	},
 
 	remove: function() {
-		for each (var line in this.dLine) {
-			this.field.splice(line, 1)
-			this.field.unshift( $.extend(true, [], this.emptyLine) );
+    var field = this.field;
+    var emptyLine = this.emptyLine;
+		_.each(this.dLine, function(line) {
+			field.splice(line, 1)
+			field.unshift( $.extend(true, [], emptyLine) );
 			++gameBoard.line;
 			$("#line").html("Line : "+gameBoard.line);
-		}
+		});
 		this.dLine = [];
 	},
 	
@@ -174,10 +177,10 @@ var holdBox = {
 
 	draw: function() {
 		this.setColor(Tetrimino[curBlock.holdName].color);
-		for each (var pos in Tetrimino[curBlock.holdName].pos)
-			this.fillRectM(pos.x - ((board.size.x/CELL_SIZE)/2 - 1),
-                           pos.y,
-                           CELL_SIZE, CELL_SIZE);
+    var fillRectM = this.fillRectM;
+		_.each(Tetrimino[curBlock.holdName].pos, function(pos) {
+			fillRectM(pos.x - ((board.size.x/CELL_SIZE)/2 - 1), pos.y, CELL_SIZE, CELL_SIZE);
+    });
 	},
 
 	fillRectM: function(x, y, width, height) {
@@ -230,25 +233,26 @@ var nextBoxList = {
 
 	draw: function() {
 		var t = 0;
+    var fillRectM = this.fillRectM;
 		if (gameBoard.curNum < this.nextNames.length) {
 			for (var i=gameBoard.curNum+1; i<this.nextNames.length; ++i) {
 				this.setColor(Tetrimino[ this.nextNames[i] ].color);
-				for each (var pos in Tetrimino[ this.nextNames[i] ].pos) {
-					this.fillRectM(pos.x - ((board.size.x/CELL_SIZE)/2 - 1),
+				_.each(Tetrimino[ this.nextNames[i] ].pos, function(pos) {
+					fillRectM(pos.x - ((board.size.x/CELL_SIZE)/2 - 1),
 								   pos.y + t,
 								   CELL_SIZE, CELL_SIZE);
-				}
+				});
 				t += 3;
 			}
 		}
 
 		for (var i=0; i<gameBoard.curNum; ++i) {
 			this.setColor(Tetrimino[ this.nextNames[i] ].color);
-			for each (var pos in Tetrimino[ this.nextNames[i] ].pos) {
-				this.fillRectM(pos.x - ((board.size.x/CELL_SIZE)/2 - 1),
+			_.each(Tetrimino[ this.nextNames[i] ].pos, function(pos) {
+				fillRectM(pos.x - ((board.size.x/CELL_SIZE)/2 - 1),
 							   pos.y + t,
 							   CELL_SIZE, CELL_SIZE);
-			}
+			});
 			t += 3;
 		}
 	},
@@ -283,12 +287,14 @@ var curBlock = {
 	cell: new Object,
 	shade: new Array,
 	holdName: null,
-	canhold: true,
+	canHold: true,
 	
 	init: function() {
 		curBlock.cell = $.extend(true, {}, Tetrimino[ nextBoxList.nextNames[gameBoard.curNum] ]);
-		for each (var pos in this.cell.pos)
-			this.shade.push({x: pos.x, y: pos.y});
+    var shade = this.shade;
+		_.each(this.cell.pos, function(pos) {
+			shade.push({x: pos.x, y: pos.y});
+    });
 	},
 
 	update: function(drawFunc, colorFunc, alphaFunc) {
@@ -296,7 +302,7 @@ var curBlock = {
 		else {
 			board.add(this.cell);
 			this.cell = gameBoard.callNextBlock();
-			this.canhold = true;
+			this.canHold = true;
 			for (var i=0; i<this.cell.pos.length; ++i)
 				this.shade[i] = {x: this.cell.pos[i].x, y: this.cell.pos[i].y};
 			for (var i=0; i<nextBoxList.nextNames.length-1; ++i)
@@ -310,53 +316,59 @@ var curBlock = {
 
 	draw: function(drawFunc, colorFunc) {
 		colorFunc(this.cell.color);
-		for each (var pos in this.cell.pos)
+		_.each(this.cell.pos, function(pos) {
 			drawFunc(pos.x, pos.y, CELL_SIZE, CELL_SIZE);
+    });
 	},
 	
 	drawShade: function(drawFunc, alphaFunc) {
 		alphaFunc(0.4);
 		this.shadeAcuPos();
-		for each (var pos in this.shade)
+		_.each(this.shade, function(pos) {
 			drawFunc(pos.x, pos.y, CELL_SIZE, CELL_SIZE);
+    });
 		alphaFunc(1.0);
 	},
 
 	shadeAcuPos: function() {
 		this.shade = $.extend(true, [], this.cell.pos);
 
-		while (canFall())
+    while (canFall())
 			fall();
 
 		function canFall() {
-			for each (var pos in curBlock.shade) {
+      var result = true;
+			_.each(curBlock.shade, function(pos) {
 				//Field
 				if ( (board.size.y/CELL_SIZE-1 - pos.y) == 0 )
-					return false;
+					result = false;
 
 				//SolidBlock
 				for (var y=0; y<board.size.y/CELL_SIZE; ++y) {
 					if (pos.y < y) {
 						if (board.field[y][pos.x].flag && (y-pos.y) <= 1)
-							return false;
+							result = false;
 					}
 				}
-			}
+			});
 
-			return true;
-		}
+			return result;
+    }
 
 		function fall() {
-			for each (var pos in curBlock.shade)
+			_.each(curBlock.shade, function(pos) {
 				++pos.y;
+      });
 		}
 	},
 
 	clear: function(clearFunc) {
-		for each (var pos in this.cell.pos)
+		_.each(this.cell.pos, function(pos) {
 			clearFunc(pos.x, pos.y, CELL_SIZE, CELL_SIZE);
-		for each (var pos in this.shade)
+    });
+		_.each(this.shade, function(pos) {
 			clearFunc(pos.x, pos.y, CELL_SIZE, CELL_SIZE);
+    });
 	},
 
 	move: function(e, drawFunc, colorFunc, alphaFunc) {
@@ -384,7 +396,7 @@ var curBlock = {
 
 		switch (e.charCode) {
 		case 32:
-			if (this.canhold) {
+			if (this.canHold) {
 				this.hold();
 				holdBox.drawBackGround();
 				holdBox.draw();
@@ -421,17 +433,17 @@ var curBlock = {
 		}	
 
 		this.init();
-		this.canhold = false;
+		this.canHold = false;
 	},
 
 	slide: function(direction) {
 		if (direction=="right")     ++this.cell.base.x;
 		else if (direction=="left") --this.cell.base.x;
 
-		for each (var pos in this.cell.pos) {
+		_.each(this.cell.pos, function(pos) {
 			if (direction=="right")     ++pos.x;
 			else if (direction=="left") --pos.x;
-		}
+		});
 	},
 
 	//i
@@ -455,86 +467,93 @@ var curBlock = {
 	},
 
 	fall: function() {
-		for each (var pos in this.cell.pos)
+		_.each(this.cell.pos, function(pos) {
 			++pos.y;
+    });
 		++this.cell.base.y;
 	},
 
 	canFall: function() {
-		for each (var pos in this.cell.pos) {
+    var result = true;
+		_.each(this.cell.pos, function(pos) {
 			//Field
 			if ( (board.size.y/CELL_SIZE-1 - pos.y) == 0 )
-				return false;
+				result = false;
 
 			//SolidBlock
 			for (var y=0; y<board.size.y/CELL_SIZE; ++y) {
 				if (pos.y < y) {
 					if (board.field[y][pos.x].flag && (y-pos.y) <= 1)
-						return false;
+						result= false;
 				}
 			}
-		}
+		});
 
-		return true;
+		return result;
 	},
 
 	canSlide: function(direction) {
-		for each (var pos in this.cell.pos) {
+    var result = true;
+		_.each(this.cell.pos, function(pos) {
 			if (direction=="right") {
 				//Field
 				if ( (board.size.x/CELL_SIZE-1 - pos.x) == 0 )
-					return false;
+					result = false;
 
 				//SolidBlock
 				for (var x=0; x<board.size.x/CELL_SIZE; ++x) {
 					if (pos.x < x) {
 						if (board.field[pos.y][x].flag && (x-pos.x) <= 1)
-							return false;
+							result = false;
 					}
 				}
 			} else if (direction=="left") {
 				//Field
 				if (pos.x == 0 )
-					return false;
+					result = false;
 
 				//SolidBlock
 				for (var x=0; x<board.size.x/CELL_SIZE; ++x) {
 					if (pos.x > x) {
 						if (board.field[pos.y][x].flag && (pos.x-x) <= 1)
-							return false;
+							result = false;
 					}
 				}
 			}
-		}
+		});
 
-		return true;
+		return result;
 	},
 
 	canTurn: function(direction) {
-		for each (var pos in this.cell.pos) {
+    var cx = this.cx;
+    var cy = this.cy;
+    var cell = this.cell;
+    var result = true;
+		_.each(this.cell.pos, function(pos) {
 			if (direction=="right") {
-				this.cx = (pos.x-this.cell.base.x) * cos(PI/2) -
-                          (pos.y-this.cell.base.y) * sin(PI/2) + this.cell.base.x;
-				this.cy = (pos.x-this.cell.base.x) * sin(PI/2) +
-                          (pos.y-this.cell.base.y) * cos(PI/2) + this.cell.base.y;
+				cx = (pos.x-cell.base.x) * cos(PI/2) -
+                          (pos.y-cell.base.y) * sin(PI/2) + cell.base.x;
+				cy = (pos.x-cell.base.x) * sin(PI/2) +
+                          (pos.y-cell.base.y) * cos(PI/2) + cell.base.y;
 			} else if (direction=="left") {
-				this.cx = (pos.x-this.cell.base.x) * cos(-PI/2) -
-                          (pos.y-this.cell.base.y) * sin(-PI/2) + this.cell.base.x;
-				this.cy = (pos.x-this.cell.base.x) * sin(-PI/2) +
-                          (pos.y-this.cell.base.y) * cos(-PI/2) + this.cell.base.y;
+				cx = (pos.x-cell.base.x) * cos(-PI/2) -
+                          (pos.y-cell.base.y) * sin(-PI/2) + cell.base.x;
+				cy = (pos.x-cell.base.x) * sin(-PI/2) +
+                          (pos.y-cell.base.y) * cos(-PI/2) + cell.base.y;
 			}
 
 			//Field
-			if ( (board.size.x/CELL_SIZE-1 - this.cx) < 0 || this.cx < 0 ||
-				 (board.size.y/CELL_SIZE-1 - this.cy) < 0 || this.cy < 0 )
-				return false;
+			if ( (board.size.x/CELL_SIZE-1 - cx) < 0 || cx < 0 ||
+				 (board.size.y/CELL_SIZE-1 - cy) < 0 || cy < 0 )
+				result = false;
 
 			//SolidBlock
-			if (board.field[this.cy][this.cx].flag)
-				return false;
-		}
+			if (board.field[cy][cx].flag)
+				result = false;
+		});
 
-		return true;
+		return result;
 	}
 };
 
@@ -650,12 +669,13 @@ var gameBoard = {
 	},
 
 	blockAccurate: function() {
-		for each(var color in Object.keys(Tetrimino)) {
-			for each (var pos in Tetrimino[color].pos)
+		_.each(Object.keys(Tetrimino), function(color) {
+			_.each(Tetrimino[color].pos, function(pos) {
 				pos.x += (board.size.x/CELL_SIZE) / 2 - 1;
+      });
 
 			Tetrimino[color].base.x += (board.size.x/CELL_SIZE) /2 - 1;
-		}
+		});
 	}
 }; 
 
